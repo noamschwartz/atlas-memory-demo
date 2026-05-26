@@ -148,3 +148,9 @@ frontend/src/
 ├── components/         # 49 reusable components
 └── config/             # Demo configuration (prompts, personas, tracks)
 ```
+
+---
+
+## License
+
+[MIT](./LICENSE) © 2026 Noam Schwartz.
