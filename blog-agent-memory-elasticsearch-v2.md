@@ -1,0 +1,216 @@
+# Building agent memory on Elasticsearch
+
+*Three indices, hybrid recall with a reranker, supersession, decay, and DLS. The architecture and the numbers behind a persistent memory layer for agents.*
+
+Production agents fail in a predictable way. A customer reports a problem at 9am; by 9pm the agent suggests the same fix that failed two weeks ago. The agent isn't dumb. It just has no memory. Nothing in the context window survives the session boundary.
+
+The standard workaround is to stuff prior context into the prompt window. That breaks down on cost, on latency, and on the well-documented "lost in the middle" effect, where models ignore facts placed far from the prompt's edges. A 1M-token context window is a scratchpad. It is not a memory system.
+
+The context window is *working memory*: the active reasoning space for a single inference. What is missing is *long-term memory*: a persistent store that survives session end, scales to years of interaction, and lets you retrieve facts by content, by time, and by user.
+
+This post is about the architecture of a real one, built on Elasticsearch and structured around three categories from cognitive science, one hybrid recall query with RRF and a cross-encoder reranker, supersession for contradictions, and per-user DLS isolation. On a QA-style eval over 168 questions, R@10 averages 0.87 with zero cross-tenant leaks.
+
+The [full implementation is on GitHub](https://github.com/noamschwartz/atlas-memory-demo); this post is about *why* it is shaped the way it is.
+
+> 📹 *Watch the 90-second walkthrough → [video link]*
+
+## What an agent memory store has to do
+
+A user asks *"what fix did we try last time?"*, a temporal query with an exact-match constraint. Or *"Why are my smart bulbs only showing white?"*, which needs personal memory blended with a shared catalog. Memory itself doesn't behave uniformly: events the user lived, stable facts about them, and step-by-step playbooks all have different write rates and aging rules, so the store has to recognize the type and treat each accordingly. And in any multi-user deployment, each user's memory has to stay invisible to every other user. Fresh events accumulate fast enough that they have to be consolidated into the durable kinds, or the index turns into a haystack. When a user contradicts a recalled fact, the old version has to be superseded rather than deleted, so the audit trail stays. Older facts shouldn't outrank fresh ones, and facts the user touches often shouldn't sink. And the whole memory layer should be reachable by any MCP-speaking client, not tied to one agent runtime.
+
+Splitting these across a vector store, a keyword engine, an audit layer, and a separate auth service means four things that can break and extra round trips on every recall. The requirements describe a search engine, so this implementation uses one. The rest of this post walks through each.
+
+## Three buckets: episodic, semantic, procedural
+
+The first design decision is what categories of memory to store at all. Just saving everything builds a haystack with no signal. Cognitive science already has the right categories, and they map cleanly onto three Elasticsearch indices.
+
+- **Episodic memory.** Time-stamped events: what the user said. Most of it is short-lived: useful for one turn, not worth keeping. A few entries become evidence for durable facts later.
+- **Semantic memory.** Distilled, stable assertions about the user. *Sarah owns a Lumio Hub v2. Sarah is on iOS 17.4. Sarah's hub was reset in March.* These survive across sessions and are what the agent grounds in.
+- **Procedural memory.** Multi-step playbooks. *How to troubleshoot Zigbee disconnects.* Processes, not facts. Each carries `success_count` and `failure_count`, incremented by consolidation when the user confirms a fix worked or didn't. The counters are surfaced to the consolidation LLM as context when it considers whether to refine or replace a playbook.
+
+The point isn't to be neat. It is that each category has a different *lifecycle*. Episodic is written constantly and decays. Semantic is curated, deduped, and superseded as the user changes. Procedural accumulates outcome feedback (`success_count`, `failure_count`) that feeds consolidation. One bucket cannot model that. Three indices, one per memory type, lets each follow its own write rate, its own aging rules, and its own update rules without coupling them.
+
+Alongside these three sits a fourth retrieval surface: world data already in Elasticsearch (catalog, knowledge base). It is not "memory" in the cognitive sense, but the agent retrieves it through the same hybrid query, so it belongs in the same picture.
+
+## The recall pipeline: hybrid retrieval with RRF and a reranker
+
+Memory is recalled with a two-stage hybrid search: **RRF over BM25 + Jina v5 dense, then a cross-encoder reranker on the merged candidates.** Each document is indexed two ways from one write: the raw text lands in the BM25 inverted index, and `copy_to` routes the same value into a `semantic_text` field that auto-generates Jina v5 vectors. One write, two retrieval paths, no separate embedding pipeline ([index mapping](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/mappings/episodic.json#L10)).
+
+**Over-fetch.** A reranker can only re-order what it sees, so the candidate pool needs to be wide. The hybrid retriever fetches 80 candidates per leg and RRF-fuses with `rank_constant=30` (tighter than the ES default of 60, so top-ranked items dominate more). ([`_rrf_fetch`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/operations.py#L491))
+
+**Reranker.** A Jina v2 cross-encoder scores the merged candidates against the user query. If inference fails, the code falls through to the RRF order: recall stays correct, just less precise. ([`_rerank`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/operations.py#L375))
+
+One subtlety, shown in the diagram. The agent will paraphrase the user's message before calling recall, which strips literal version numbers, error codes, and proper nouns from the query before BM25 ever sees them. So every turn opens with a recall on the **verbatim** message, injected as if the agent had made the call ([`agent.py`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/agent.py#L121)).
+
+## Writing and consolidating agent memory.
+
+Two operations move memory from "what just happened" into "what is durable about this user."
+
+**Write.** Every user turn writes one episodic event before the LLM responds. Agent replies aren't stored. The conversation history already carries them into the next call, and their length drowns out the short, fact-rich things the user said. *Which advice worked* is captured separately, by `success_count` / `failure_count` on the procedural index, not by storing the response prose.
+
+**Consolidate.** Episodic logs accumulate fast. Consolidation promotes them into semantic facts and procedural playbooks that survive after the conversation history is gone. This implementation runs it every turn so you can watch the inspector update live; in production the right cadence is a background job: every 24 hours, or when a user's episodic index crosses N new events. Per-turn doubles LLM calls per message.
+
+In one call ([prompt](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/consolidate.py#L24)), the consolidation LLM is handed recent episodes plus existing facts and playbooks, and asked for three things:
+
+- **New semantic facts**, with `supporting_episode_ids` for provenance.
+- **New procedural playbooks**, when a multi-step resolution doesn't match any existing trigger.
+- **Procedural updates**, `success_count++` / `failure_count++` based on whether the user confirmed the fix, plus `refined_steps` when they disagreed.
+
+The prompt requires `supporting_episode_ids` on every output, so a sparse turn returns an empty list and writes nothing.
+
+Dedup uses the same hybrid retriever the agent uses for recall: for each candidate fact, a top-K hybrid search against the user's semantic index narrows the comparison set, and only those candidates go to the LLM for a meaning judgment. Two further guards bracket the output: candidates below a confidence floor are dropped, and an accepted fact whose top similarity hit clears `≥ 0.90` is treated as a duplicate. *In this implementation, dedup is simpler: the most recent ~50 facts are passed to the consolidation LLM with a "do not duplicate" instruction, and the post-LLM confidence and similarity guards aren't wired yet. The hybrid-recall path and the bracketing guards are the production architecture; this snapshot relies on the LLM doing the comparison directly because the corpus is small enough that it fits.*
+
+`success_count` and `failure_count` close a feedback loop on playbooks: across enough conversations, the same field that records "this worked" becomes the signal for "show this one first next time." *Today the counts are written but not yet biased into retrieval ranking. On a handful of resolved tickets the boost is statistical noise. Wired into production once a deployment has the density to make the signal meaningful.*
+
+## Handle contradictions in-turn
+
+Memory that only ever adds, never removes, ends up wrong. A user says *"I moved to Edinburgh"*; the agent writes a new fact. Six months later, the old *"lives in Bristol"* fact is still in the index. Both surface on every recall, and the agent either picks the wrong one or hedges. Trust dies fast.
+
+The fix is one rule in the system prompt ([full prompt](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/agent.py#L32)), no new tool. Instead of deleting, the agent *supersedes*:
+
+```
+If the customer contradicts a recalled fact, call
+  write_memory(text=<new>, supersedes_id=<old id>, contradiction="harsh"|"natural").
+
+Use contradiction="harsh" when the customer explicitly denies or
+corrects the prior fact ("no, that's wrong", "I never X"). The
+new fact carries a small confidence penalty.
+
+Use contradiction="natural" for routine updates (moved, upgraded,
+preference change). The new fact is written at full confidence.
+
+Never ask the customer to confirm before superseding.
+The contradiction itself is the signal.
+forget_memory is only for explicit "forget this" requests.
+```
+
+**A worked example.** Sarah's last visit recorded `id=abc, "Sarah lives in Bristol"` in the semantic index. Three months later she opens a chat: *"we left Bristol, in Edinburgh now."*
+
+1. **Recall.** The pre-recall on Sarah's message returns hits including `{id: "abc", text: "Sarah lives in Bristol", memory_type: "semantic"}`.
+2. **Detect.** The agent sees the conflict between the recalled fact and the new message.
+3. **Classify.** *"We left Bristol, in Edinburgh now"* is a natural update, not a denial. The agent picks `contradiction="natural"`.
+4. **Write.** The agent calls [`write_memory`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/operations.py#L55)`(text="Sarah lives in Edinburgh", supersedes_id="abc", contradiction="natural")`. Two things happen in one shot:
+   - A new doc `id=xyz` is written at full confidence (no penalty, because the contradiction was natural).
+   - The old doc `abc` is updated with `superseded_by=xyz, superseded_at=<now>`.
+5. **Recall hides the old.** Every recall applies a [filter `must_not exists field=superseded_by`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/operations.py#L307). `abc` is hidden from the agent's view. `xyz` surfaces normally.
+6. **Audit kept.** Doc `abc` stays in the index. A query for `superseded_by=xyz` reconstructs the chain.
+
+Had Sarah instead said *"I never lived in Bristol, that was my sister"*, step 3 would classify it as `harsh`. The same write happens, but the new fact's confidence is reduced by `SUPERSEDE_CONFIDENCE_PENALTY`. The system hedges slightly until the new state is reinforced by further conversation.
+
+Edge cases follow the same shape: an already-superseded fact can be superseded again (`abc → xyz → pqr`); a low-stakes preference (`"I prefer dark mode now"`) supersedes as `contradiction="natural"`. `forget_memory` hard-deletes; use it only when the customer explicitly says "forget X." It is not the contradiction tool.
+
+One subtlety. The recall might surface several facts contradicted by the same new statement. Sarah's location lives in *"Sarah lives in a Victorian flat in Bristol"* (semantic), in *"Sarah has a flat in Bristol where her Hub v2 is"* (semantic), and possibly in an episodic event from a previous chat. The agent must supersede *all* of them, not just the first one it sees. Scan recall for every fact the new statement makes false and issue one `write_memory(supersedes_id=…)` call per old id. Facts that merely mention Bristol but remain true (`"Victorian flats in Bristol have thick walls that attenuate Zigbee signal"`) stay unsuperseded. Sarah's move doesn't change Bristol's architecture.
+
+Superseded docs accumulate but never surface in recall. In production, a periodic reindex moves them into a separate archive index that ILM ages through cold and frozen tiers (searchable snapshots). The audit chain stays queryable on cold storage; the active semantic index stays hot and small.
+
+## Making same-turn writes visible to recall
+
+When the user says *"I have a Lumio Range Extender I never set up. Now what's my complete device list?"* in a single message, the agent writes the Range Extender fact and then immediately runs a recall, within the same turn, sometimes within the same iteration's tool-call batch. The default Elasticsearch refresh interval plus the `semantic_text` inference cost would risk a sub-second propagation gap where the just-written doc isn't yet visible to the recall.
+
+The fix lives at the storage layer. Every `write_memory` the agent triggers passes [`refresh=True`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/tools.py#L215), forcing the shard to refresh (and the Jina v5 embedding from the inline inference processor to land) before the call returns. The next tool call sees the new doc. The Range Extender shows up in the final reply because the recall that ran right after the write saw it.
+
+*At higher write volume `refresh=True` becomes a throughput cost. Production deployments may want to shift to async indexing plus an agent-layer "just-written" register that holds writes in the LLM's context until the index catches up. Today the simpler choice earns its place.*
+
+## Weight recent facts higher
+
+The retrieval setup so far gives every fact equal weight regardless of when it was created or last used. That's the wrong default. A fact recalled twice in the past week is almost certainly more relevant than an identical fact mentioned once two years ago.
+
+We multiply every result's score by two multipliers: a primary recency signal and a secondary frequency refinement. The recency signal is **time-decay**: a gauss-shaped multiplier computed in Painless over each index's date field (details below). The frequency refinement is a **use-count boost** (`1 + log10(1 + use_count) * weight`), so a fact recalled ten times boosts about 1.2× and one recalled a hundred times about 1.4×.
+
+*The two answer different questions: time-decay, how recently a fact was touched; use-count, how often. They diverge when facts share a `last_used_at` timestamp: decay can't separate "recalled once" from "recalled forty times"; use-count can. Time-decay is load-bearing; use-count is the refinement that earns its place once recall volume per fact is high enough to carry signal.*
+
+### Date fields per memory type
+
+Episodic and semantic decay use different date fields. Episodic uses `timestamp` (event time); semantic uses `last_used_at` (set at write, bumped on recall). ES's native `gauss` can't span them, because the function takes a single field name that must exist on every index in the search. So time decay lives in a Painless script that picks the right field per index and computes a gauss-shaped multiplier in place:
+
+*Procedural is exempt from time-decay deliberately. `last_used_at` is bumped on every recall, successful or not, so a pure decay multiplier would reward "recently tried" rather than "recently effective." The right pairing is a `last_success_at` field plus `success_count` / `failure_count` wired into ranking; until both are in place, recency alone is too coarse a signal for procedural retrieval.*
+
+The recall-time bump on semantic is the load-bearing part. It turns "old facts get less weight" into "facts the agent hasn't needed recently get less weight." Relevance decay, not truth decay. Truth decay is handled by supersession (above). A 5-year-old fact the agent recalls every week stays at the top because `last_used_at` is fresh.
+
+*This is the same cognitive-science thread the three-bucket split runs on. Retrieval practice (the act of recalling something) strengthens its accessibility, while disuse lets it fade. The recall-time bump on `last_used_at` is the engineering version of the same effect.*
+
+### The retrieval-time multiplier
+
+Both factors live in one `function_score` block that wraps each RRF leg:
+
+```json
+{
+  "function_score": {
+    "query": "<bool query: text/semantic match + filters>",
+    "functions": [
+      {
+        "filter": {"terms": {"_index": ["atlas_memory_episodic", "atlas_memory_semantic"]}},
+        "gauss":  {"last_used_at": {"origin": "now", "scale": "1825d", "offset": "180d", "decay": 0.5}}
+      },
+      {
+        "filter":       {"term": {"_index": "atlas_memory_semantic"}},
+        "script_score": {"script": "1 + log10(1 + use_count) * 0.2"}
+      }
+    ],
+    "score_mode": "multiply",
+    "boost_mode": "multiply"
+  }
+}
+```
+
+*In code, both functions live in a single Painless script that branches per index (same math, fewer function_score entries).*
+
+Two `_index` filters do double duty. They scope each function to the memory type it should affect: time decay applies to episodic and semantic, the use-count boost applies to semantic only. And they keep procedurals and catalog out: a function whose filter doesn't match returns the neutral 1.0, so cross-index queries that include those indices score correctly without parser issues. The full function is in [`operations.py`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/operations.py#L168).
+
+Two parameters control the gauss curve:
+
+- **`offset` (180d)**: a flat zone. Docs younger than 180 days get multiplier 1.0 regardless of exact age. Without it, fresh facts compete with each other on sub-day timing noise.
+- **`scale` (1825d, ~5 years)**: the distance past the offset at which the multiplier hits `decay = 0.5`. Effectively a half-life from the end of the flat zone.
+
+Decay is a deliberate trade-off. When every fact in the corpus is unique and stays correct over time, applying any decay costs some recall: old facts get penalised even when they're still right. Where decay earns its place is the realistic case: several competing facts about the same thing coexist and you want the most recent or most-used one to rank highest. The default scale (1825d) is conservative for that reason. Tighten it for domains where facts go stale fast (customer support with rapid product churn). Loosen it for personal-assistant memory where facts stay relevant for years. One-line change in `constants.py`.
+
+## Isolate at the cluster, not the app
+
+**Document-Level Security (DLS)** moves the isolation rule into the cluster itself. Each user gets an API key whose role descriptor carries a DLS query that admits docs belonging to that user (and the shared catalog, which has no `user_id` field). An agent using that key can run any query it wants and will never see another user's documents. The cluster simply does not return them. That's the production isolation guarantee, enforced server-side on every query the key issues.
+
+*The retriever also carries a `user_id` filter in code as a paranoia pass against config drift: a new index template landing without DLS, a role descriptor edited and the clause silently dropped, an admin key reused by mistake. DLS is the architecture; this code-level pass costs essentially nothing at query time.*
+
+## Plug in your existing catalog
+
+Memory lookup is one Elasticsearch query. The DLS query on Sarah's API key admits docs where `user_id == "sarah"`. Catalog and other shared indices have no `user_id` field at all; they're meant to be visible to everyone. To include them, the DLS query widens from "must equal sarah" to "equals sarah OR has no `user_id`": a `bool.should` admitting `user_id == "sarah"` OR `must_not exists: user_id`. Same retriever, same RRF, same decay. No new pipeline.
+
+A [bootstrap script](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/scripts/atlas/bootstrap_users.py#L40) mints the per-user DLS keys with the widened query baked in.
+
+A lookup for *"smart bulb showing only white"* now returns both Sarah's stored constraint *and* the catalog entry on bulb compatibility, ranked together.
+
+User memory and catalog can land in the same recall on the same topic and contradict each other. The retriever applies a small source prior ([`CATALOG_SOURCE_PRIOR`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/memory/constants.py#L56), 0.85) inside the same script that handles time decay (one more `_index` branch, no new mechanism), so user memory wins on near-ties. It's a soft tilt, not a routing rule: when the catalog has a clearly stronger relevance match (product specs, technical lookups), the reranker still picks it. The hard cases ("always trust catalog for spec lookups" or the inverse for personal preferences) sit in the agent's system prompt, not the retriever.
+
+## Connect any agent via MCP
+
+The memory layer is most useful when it isn't tied to one agent. The Model Context Protocol gives that for free. The endpoint is `/api/atlas/mcp/{user_id}`, so any MCP-speaking client (Claude Desktop, Cursor, your own agent) can plug in by pasting the JSON snippet at [`mcp.py`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/routes/mcp.py#L20) into its config.
+
+For Claude Desktop, the config lives in `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). For Cursor, paste it under Settings → MCP. Restart the client and the three Atlas tools (`recall_memory`, `write_memory`, `forget_memory`) appear in the tool drawer, calling the same Elasticsearch indices the FastAPI app uses. Same memory layer, any agent, no rewrite. The three tool contracts are defined in [`tools.py`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/app/atlas/tools.py#L25).
+
+## Measuring agent-memory recall quality
+
+*A note on "recall": elsewhere in this post it means memory recall (the agent retrieving a stored fact). Here it's the unrelated information-retrieval metric Recall@K: whether the right doc appears in the top-K results.*
+
+Memory architectures are easy to design and hard to verify. The eval here is QA-style passage retrieval, the standard RAG benchmark. For each sampled doc, an LLM writes two questions a user might plausibly ask whose answer is that doc. For example, *"my baby's sleep is fragile, anything I should remember when setting up automations?"* points to Sarah's nursery quiet-hours fact. The retriever then has to surface the source doc in the top-k.
+
+On three personas, ~250 docs each, 84 sampled docs, 168 questions:
+
+> **Recall@10 ≈ 0.87, Recall@5 ≈ 0.80, MRR ≈ 0.64**
+> **cross-tenant leaks = 0**
+
+The leaks number is the ship gate for any multi-tenant memory system; the rest is the quality story. The eval is gated in CI ([`eval_recall.py`](https://github.com/noamschwartz/atlas-memory-demo/blob/main/backend/scripts/atlas/eval_recall.py#L71)) at R@10 ≥ 0.85, R@5 ≥ 0.75, leaks = 0. The numbers are approximate because the reranker has serving-side variance: across three back-to-back runs, R@10 landed at 0.85, 0.88, 0.89.
+
+Semantic facts are the harder case (R@10 ≈ 0.78); episodic averages 0.96 and procedural hits 1.0. The reason is sibling collisions: a question about Sarah's hub disconnects has several plausibly-correct facts in the corpus, and the retriever sometimes picks the wrong one.
+
+## Closing
+
+Agent memory is a handful of problems, each with one move:
+
+- **Memory isn't one thing.** Three indices, one per lifecycle: episodic (what happened), semantic (what's true), procedural (what works).
+- **The LLM paraphrases away keyword precision.** Every turn opens with a recall on the verbatim message; retrieval is hybrid, then reranked.
+- **Append-only memory rots.** Consolidation promotes episodes into durable facts; supersession retires the ones a user contradicts.
+- **Old facts shouldn't rank like fresh ones.** Scores decay over time, and a recall lifts a fact back up.
+- **Tenants must never see each other.** Isolation lives in the cluster via DLS, not in a filter you can forget.
+
+None of it is a separate system: catalog, isolation, and decay all compose into one Elasticsearch query.
+
+Get that right, and the agent that pitched the same broken fix at 9pm finally remembers: the fix that failed, your name, and that the dog keeps chewing the sensor cables.
