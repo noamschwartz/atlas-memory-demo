@@ -1,0 +1,11 @@
+# Custom OTel Collector image with config baked in
+# For Cloud Run sidecar deployment
+#
+# Build with:
+#   docker build -f deploy/Dockerfile.otel-collector -t my-app-otel --platform linux/amd64 .
+
+FROM otel/opentelemetry-collector-contrib:0.92.0
+
+COPY deploy/otel-collector-cloudrun.yaml /etc/otel/config.yaml
+
+CMD ["--config=/etc/otel/config.yaml"]

@@ -1,0 +1,172 @@
+#!/usr/bin/env node
+/**
+ * EUI Icon Cache Generator
+ * Bundles ALL EUI icons to prevent runtime errors with Vite.
+ * 
+ * This script:
+ * 1. Imports ALL icons from @elastic/eui/es/components/icon/assets/
+ * 2. Registers them with appendIconComponentCache()
+ * 3. Reads EUI's icon_map.js to get ALL aliases (like 'discuss' -> 'comment')
+ * 4. Adds all aliases so dynamic imports are never needed
+ * 
+ * This makes the app robust - no icons will fail due to dynamic import issues.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const SRC_DIR = path.join(__dirname, '../src');
+const OUTPUT_FILE = path.join(SRC_DIR, 'iconCache.ts');
+const EUI_ICONS_DIR = path.join(__dirname, '../node_modules/@elastic/eui/es/components/icon/assets');
+const EUI_ICON_MAP = path.join(__dirname, '../node_modules/@elastic/eui/es/components/icon/icon_map.js');
+
+/**
+ * Parse EUI's icon_map.js to extract all aliases
+ * Returns a map of alias -> target (e.g., 'discuss' -> 'comment')
+ */
+function parseEuiIconMap() {
+  const aliases = {};
+  
+  if (!fs.existsSync(EUI_ICON_MAP)) {
+    console.warn('⚠️  EUI icon_map.js not found, using fallback aliases');
+    return {
+      discuss: 'comment',
+      crossInCircleFilled: 'crossInCircle',
+    };
+  }
+  
+  const content = fs.readFileSync(EUI_ICON_MAP, 'utf8');
+  
+  // Match lines like:  discuss: 'comment',
+  const regex = /^\s+(\w+):\s*'([a-z_]+)',/gm;
+  let match;
+  
+  while ((match = regex.exec(content)) !== null) {
+    const alias = match[1];
+    const target = match[2];
+    
+    // Only add if alias is different from target (these are the real aliases)
+    // Convert snake_case target to variable name format
+    if (alias !== target && alias !== target.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase())) {
+      aliases[alias] = target;
+    }
+  }
+  
+  console.log(`📋 Found ${Object.keys(aliases).length} EUI icon aliases`);
+  return aliases;
+}
+
+// Get ALL aliases from EUI's icon_map.js
+const ALIASES = parseEuiIconMap();
+
+function generateIconCache() {
+  if (!fs.existsSync(EUI_ICONS_DIR)) {
+    console.error(`❌ EUI icons directory not found at: ${EUI_ICONS_DIR}`);
+    process.exit(1);
+  }
+
+  const files = fs.readdirSync(EUI_ICONS_DIR);
+  const iconFiles = files.filter(f => f.endsWith('.js'));
+  
+  const validIcons = new Map();
+
+  iconFiles.forEach(file => {
+    const name = path.basename(file, '.js');
+    validIcons.set(name, name);
+  });
+
+  const sortedIcons = [...validIcons.keys()].sort();
+
+  // Reserved keywords that need special handling
+  const RESERVED_KEYWORDS = new Set(['export', 'function', 'import', 'package', 'class', 'return', 'if', 'else', 'for', 'while', 'switch', 'case', 'default', 'break', 'continue', 'var', 'let', 'const', 'new', 'this', 'typeof', 'instanceof', 'void', 'delete', 'in', 'of', 'try', 'catch', 'finally', 'throw', 'with', 'debugger', 'do', 'yield', 'async', 'await']);
+  
+  const imports = sortedIcons.map(name => {
+    let varName = name.replace(/[^a-zA-Z0-9]/g, '_');
+    // Handle reserved keywords
+    if (RESERVED_KEYWORDS.has(varName)) {
+      varName = varName + 'Icon';
+    }
+    return `import { icon as ${varName} } from '@elastic/eui/es/components/icon/assets/${name}'`;
+  });
+
+  // Create a set of all icon names for duplicate checking
+  const allIconNames = new Set(sortedIcons);
+  
+  const entries = sortedIcons.map(name => {
+    let varName = name.replace(/[^a-zA-Z0-9]/g, '_');
+    // Handle reserved keywords
+    const isReserved = RESERVED_KEYWORDS.has(varName);
+    if (isReserved) {
+      varName = varName + 'Icon';
+    }
+    // Map snake_case to camelCase (arrow_down -> arrowDown)
+    const camelName = name.replace(/_([a-z0-9])/g, (g) => g[1].toUpperCase());
+    
+    // Build entry parts
+    const entryParts = [];
+    
+    // Always add the varName
+    entryParts.push(`  ${varName},`);
+    
+    // Add camelCase alias if different from name and varName, AND if camelName doesn't exist as separate icon
+    if (camelName !== name && camelName !== varName && !allIconNames.has(camelName)) {
+      entryParts.push(`  ${camelName}: ${varName},`);
+    }
+    
+    // For reserved keywords, add original name alias if different
+    if (isReserved && name !== varName) {
+      entryParts.push(`  ${name}: ${varName},`);
+    }
+    
+    return entryParts.join('\n');
+  });
+
+  // Build alias entries - map alias name to the variable we imported for the target
+  const aliasEntries = Object.entries(ALIASES)
+    .filter(([alias, target]) => {
+      // Only include aliases where we have the target icon
+      return validIcons.has(target);
+    })
+    .map(([alias, target]) => {
+      let targetVarName = target.replace(/[^a-zA-Z0-9]/g, '_');
+      if (RESERVED_KEYWORDS.has(targetVarName)) {
+        targetVarName = targetVarName + 'Icon';
+      }
+      return `  '${alias}': ${targetVarName},`;
+    });
+
+  return `/**
+ * EUI Icon Cache for Vite
+ * AUTO-GENERATED by scripts/generate-icon-cache.cjs
+ * 
+ * This file registers ALL EUI icons plus their aliases to prevent
+ * dynamic import failures. Any icon name used in the app will work.
+ */
+import { appendIconComponentCache } from '@elastic/eui/es/components/icon/icon'
+
+${imports.join('\n')}
+
+// Register all icons with both snake_case and camelCase names
+appendIconComponentCache({
+${entries.join('\n')}
+})
+
+// Register EUI aliases (e.g., 'discuss' -> comment, 'newChat' -> plus_in_circle)
+// These come from @elastic/eui/es/components/icon/icon_map.js
+appendIconComponentCache({
+${aliasEntries.join('\n')}
+})
+
+// All ${sortedIcons.length} EUI icons + ${aliasEntries.length} aliases are now registered
+`;
+}
+
+try {
+  const content = generateIconCache();
+  fs.writeFileSync(OUTPUT_FILE, content);
+  const iconCount = content.match(/import { icon as/g)?.length || 0;
+  const aliasCount = Object.keys(ALIASES).length;
+  console.log(`✅ Generated iconCache.ts with ${iconCount} icons + ${aliasCount} aliases = bulletproof!`);
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}

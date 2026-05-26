@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Demo Starter</title>
+    <meta name="description" content="Build compelling customer demos in hours, not weeks. A production-ready starter kit for Elastic demos.">
+    
+    <!-- Elastic brand fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --elastic-blue: #0077CC;
+            --elastic-dark: #1D1E24;
+            --elastic-green: #00BFB3;
+            --elastic-pink: #F04E98;
+            --elastic-yellow: #FEC514;
+            --text-primary: #1D1E24;
+            --text-secondary: #69707D;
+            --bg-light: #F5F7FA;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--elastic-dark) 0%, #2C2F3B 100%);
+            color: var(--white);
+            padding: 80px 20px;
+            text-align: center;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-logo {
+            max-width: 200px;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--white) 0%, #B0B8C4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            color: #B0B8C4;
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        .hero .highlight {
+            color: var(--elastic-green);
+            font-weight: 600;
+        }
+
+        .hero .byline {
+            font-size: 0.95rem;
+            color: #8B919A;
+            margin-bottom: 30px;
+        }
+
+        .hero .byline a {
+            color: var(--elastic-green);
+            text-decoration: none;
+        }
+
+        .hero .byline a:hover {
+            text-decoration: underline;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--elastic-blue);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #005fa3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--white);
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 20px;
+            background: var(--white);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 50px;
+            color: var(--text-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Value Props Section */
+        .value-props {
+            padding: 80px 20px;
+            background: var(--bg-light);
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .value-item h3 {
+            font-size: 3rem;
+            color: var(--elastic-blue);
+            margin-bottom: 8px;
+        }
+
+        .value-item p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Quick Start Section */
+        .quickstart {
+            padding: 80px 20px;
+            background: var(--white);
+        }
+
+        .quickstart-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .code-block {
+            background: var(--elastic-dark);
+            color: #E6E6E6;
+            padding: 24px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 30px 0;
+        }
+
+        .code-block .comment {
+            color: #6B7280;
+        }
+
+        .code-block .command {
+            color: var(--elastic-green);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--elastic-dark);
+            color: #B0B8C4;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer h3 {
+            color: var(--white);
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .footer p {
+            margin-bottom: 24px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .footer-links a {
+            color: var(--elastic-green);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .maintainer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 30px;
+            font-size: 0.9rem;
+        }
+
+        .maintainer a {
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .maintainer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero .tagline {
+                font-size: 1.1rem;
+            }
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <img src="images/logo.png" alt="Elastic Demo Starter" class="hero-logo">
+        <h1>Elastic Demo Starter</h1>
+        <p class="tagline">
+            Build compelling customer demos in <span class="highlight">hours, not weeks</span>.
+        </p>
+        <p class="byline">
+            Created by <a href="mailto:matthew.adams@elastic.co">Matt Adams</a> · Search AI Solutions, Elastic
+        </p>
+        <div class="cta-buttons">
+            <a href="https://github.com/elastic/elastic-demo-starter" class="btn btn-primary">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                Get Started
+            </a>
+            <a href="https://github.com/elastic/elastic-demo-starter/blob/main/docs/PROJECT_VISION.md" class="btn btn-secondary">
+                Read the Vision
+            </a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">What Can You Build?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Search Experiences</h3>
+                    <p>Full-text search with faceted filtering, relevance tuning, and RetrieverBuilder patterns. Production-ready UI components included.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>AI Chat Assistants</h3>
+                    <p>Conversational AI with Agent Builder integration, SSE streaming, reasoning display, and tool call visualisation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Multi-Agent Orchestration</h3>
+                    <p>Coordinate multiple AI agents with LLM coordinator patterns. Build complex workflows with agent routing.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics Dashboards</h3>
+                    <p>ES|QL powered dashboards, search analytics (CTR, MRR), and custom visualisations with click tracking.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Brand Customisation</h3>
+                    <p>AI-powered brand extraction from websites. Multi-theme support with dark/light modes and CSS variables.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Cloud Deployment</h3>
+                    <p>One-command Cloud Run deployment with IAP authentication. Secure by default, production patterns built-in.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Value Props Section -->
+    <section class="value-props">
+        <div class="container">
+            <h2 class="section-title">Built for Speed</h2>
+            <div class="value-grid">
+                <div class="value-item">
+                    <h3>&lt;30min</h3>
+                    <p>Time to first working demo</p>
+                </div>
+                <div class="value-item">
+                    <h3>35+</h3>
+                    <p>Verified patterns in Hive Mind</p>
+                </div>
+                <div class="value-item">
+                    <h3>6</h3>
+                    <p>Demo types supported</p>
+                </div>
+                <div class="value-item">
+                    <h3>0</h3>
+                    <p>SSE streaming issues</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section class="quickstart">
+        <div class="quickstart-content">
+            <h2 class="section-title">Quick Start</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">
+                Clone the repo and let your AI assistant do the rest.
+            </p>
+            <div class="code-block">
+                <span class="comment"># Clone the starter</span><br>
+                <span class="command">git clone</span> https://github.com/elastic/elastic-demo-starter.git my-demo<br>
+                <span class="command">cd</span> my-demo<br><br>
+                <span class="comment"># Open in Cursor and tell your AI:</span><br>
+                <span class="command">"Read docs/prompts/WELCOME_PROMPT.md and follow the instructions."</span>
+            </div>
+            <p style="text-align: center; color: var(--text-secondary);">
+                The AI assistant will interview you about your project goals, run the setup scripts, and create a customised execution plan.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <section class="footer">
+        <div class="footer-content">
+            <h3>Ready to Build?</h3>
+            <p>Join the #demo-starter Slack channel for questions, show & tell, and pattern discussions.</p>
+            <div class="footer-links">
+                <a href="https://github.com/elastic/elastic-demo-starter">GitHub Repository</a>
+                <a href="https://github.com/elastic/elastic-demo-starter/blob/main/docs/PROJECT_VISION.md">Project Vision</a>
+                <a href="https://github.com/elastic/elastic-demo-starter/blob/main/docs/FEATURE_CATALOG.md">Feature Catalog</a>
+                <a href="https://github.com/elastic/elastic-demo-starter/discussions">Discussions</a>
+            </div>
+            <div class="maintainer">
+                Created and maintained by <a href="mailto:matthew.adams@elastic.co">Matt Adams</a> — Search AI Solutions, Elastic
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

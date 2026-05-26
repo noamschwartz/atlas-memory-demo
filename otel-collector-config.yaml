@@ -1,0 +1,81 @@
+# OpenTelemetry Collector Configuration
+# 
+# This collector acts as a CORS-enabled proxy between:
+#   - Browser (OTel Web SDK) → Collector (with CORS) → Elastic APM
+#   - Backend (OTel Python SDK) can also route through here, or direct to APM
+#
+# Key feature: CORS headers allow browser OTLP export that would otherwise
+# be blocked by Elastic Cloud APM's lack of CORS support.
+#
+# IMPORTANT: Elastic APM on port 443 expects OTLP over HTTP, not gRPC!
+#
+# Usage:
+#   export OTEL_EXPORTER_OTLP_ENDPOINT="https://xxx.apm.region.gcp.cloud.es.io:443"
+#   export ELASTIC_APM_SECRET_TOKEN="your-token"
+#   ./otelcol-contrib --config otel-collector-config.yaml
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+        cors:
+          allowed_origins:
+            - "http://localhost:3000"
+            - "http://localhost:3001"
+            - "http://localhost:3002"
+            - "http://localhost:5173"  # Vite dev server
+            - "http://127.0.0.1:3000"
+            - "http://127.0.0.1:3001"
+            - "http://127.0.0.1:3002"
+          allowed_headers:
+            - "*"
+          max_age: 7200
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
+processors:
+  # Batch spans for efficient export
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+  # Add service namespace if not present
+  attributes:
+    actions:
+      - key: service.namespace
+        value: search-otel-ubi
+        action: upsert
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  # Export to Elastic APM via OTLP HTTP (not gRPC!)
+  # Elastic Cloud APM on port 443 requires HTTP
+  otlphttp/elastic:
+    endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+    headers:
+      Authorization: "Bearer ${ELASTIC_APM_SECRET_TOKEN}"
+    tls:
+      insecure: false
+
+  # Debug logging (useful during development)
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlphttp/elastic, debug]
+
+  telemetry:
+    logs:
+      level: info

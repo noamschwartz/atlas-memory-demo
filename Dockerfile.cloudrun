@@ -1,0 +1,122 @@
+# ============================================================================
+# ⚠️  WARNING: DO NOT USE THIS FOR CLOUD RUN DEPLOYMENT
+# ============================================================================
+#
+# This all-in-one approach has reliability issues:
+# - Supervisor may report success when FastAPI has actually crashed
+# - Silent failures are very hard to debug
+# - No separate container logs
+#
+# USE SIDECARS INSTEAD: ./deploy/deploy-cloudrun.sh
+#
+# This file is kept for:
+# - Local Docker testing only
+# - Reference/learning purposes
+#
+# ============================================================================
+#
+# Cloud Run "All-in-One" Dockerfile
+# Combines Frontend (Nginx/React) and Backend (FastAPI) into a single image.
+#
+# Build with:
+#   docker build -f Dockerfile.cloudrun -t my-app \
+#       --build-arg VITE_BASE_PATH=/my-demo/ \
+#       --platform linux/amd64 .
+#
+# For Cloud Run deployment, use sidecars: ./deploy/deploy-cloudrun.sh
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build Frontend (Vite + React)
+# -----------------------------------------------------------------------------
+FROM node:20-alpine as frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy package files first for better caching
+COPY frontend/package.json frontend/yarn.lock ./
+
+# Install dependencies
+RUN yarn install --frozen-lockfile
+
+# Copy source code
+COPY frontend/ ./
+
+# Build arguments
+ARG VITE_BASE_PATH=/
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+
+# Build the static assets
+# This produces /app/frontend/dist
+RUN yarn build
+
+# -----------------------------------------------------------------------------
+# Stage 2: Build Backend (Python + FastAPI)
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim as backend-builder
+
+WORKDIR /app/backend
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create venv and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# -----------------------------------------------------------------------------
+# Stage 3: Final Runtime Image
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim
+
+# Install Nginx and Supervisor
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Backend Virtual Environment
+COPY --from=backend-builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy Backend Code
+WORKDIR /app/backend
+COPY backend/app ./app
+COPY backend/run.py .
+# Note: backend/data/ is in .gitignore (runtime data like brands.json)
+# It will be created at runtime if needed
+
+# Copy Frontend Static Assets to Nginx default directory
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+
+# Configure Nginx
+# We replace the default config to serve React and proxy /api to FastAPI
+# NOTE: This Dockerfile is DEPRECATED - use sidecar deployment instead.
+# The files below (nginx-cloudrun.conf, supervisord.conf, start-fastapi.sh)
+# were removed when the project moved to the sidecar approach.
+# See deploy/deploy-cloudrun.sh for the recommended deployment method.
+COPY deploy/nginx-cloudrun.conf /etc/nginx/sites-available/default
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# Configure Supervisor to run both Nginx and Uvicorn
+COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy startup script with better error handling
+COPY deploy/start-fastapi.sh /app/start-fastapi.sh
+RUN chmod +x /app/start-fastapi.sh
+
+# Environment variables
+ENV PORT=8080
+ENV HOST=0.0.0.0
+ENV PYTHONPATH=/app/backend
+
+# Expose the port Cloud Run expects
+EXPOSE 8080
+
+# Start Supervisor (which starts Nginx + FastAPI)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

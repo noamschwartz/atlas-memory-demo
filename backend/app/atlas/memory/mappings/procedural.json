@@ -1,0 +1,35 @@
+{
+  "mappings": {
+    "properties": {
+      "user_id":      { "type": "keyword" },
+      "name":         { "type": "keyword" },
+      "trigger_text": {
+        "type": "text",
+        "copy_to": "semantic_content"
+      },
+      "description": {
+        "type": "text",
+        "copy_to": "semantic_content"
+      },
+      "semantic_content": {
+        "type": "semantic_text",
+        "inference_id": ".jina-embeddings-v5-text-small"
+      },
+      "steps": {
+        "type": "nested",
+        "properties": {
+          "order": { "type": "integer" },
+          "instruction": { "type": "text" },
+          "tool": { "type": "keyword" }
+        }
+      },
+      "version":        { "type": "integer" },
+      "success_count":  { "type": "integer" },
+      "failure_count":  { "type": "integer" },
+      "created_at":     { "type": "date" },
+      "last_used_at":   { "type": "date" },
+      "use_count":      { "type": "integer" },
+      "metadata":       { "type": "flattened" }
+    }
+  }
+}

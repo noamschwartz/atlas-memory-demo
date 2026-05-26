@@ -1,0 +1,26 @@
+# FastAPI container for Cloud Run sidecar deployment
+# Runs on port 8000 (Nginx proxies to this)
+#
+# Build with:
+#   docker build -f deploy/Dockerfile.fastapi -t my-app-fastapi --platform linux/amd64 .
+
+FROM python:3.11-slim
+
+WORKDIR /app/backend
+
+# Install dependencies
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY backend/app ./app
+COPY backend/run.py .
+
+# Environment
+ENV PYTHONPATH=/app/backend
+ENV PORT=8000
+
+EXPOSE 8000
+
+# Run uvicorn on port 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

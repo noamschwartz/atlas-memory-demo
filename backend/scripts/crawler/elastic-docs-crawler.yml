@@ -1,0 +1,151 @@
+# Elastic Documentation Crawler Configuration
+# 
+# This configuration crawls Elastic documentation and blog content
+# for indexing into the shared serverless cluster.
+#
+# Usage:
+#   # Test single URL (fastest feedback)
+#   docker run -v "$(pwd)":/config docker.elastic.co/integrations/crawler:0.4.2 \
+#     jruby bin/crawler urltest /config/backend/scripts/crawler/elastic-docs-crawler.yml \
+#     https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+#
+#   # Validate config
+#   docker run -v "$(pwd)":/config docker.elastic.co/integrations/crawler:0.4.2 \
+#     jruby bin/crawler validate /config/backend/scripts/crawler/elastic-docs-crawler.yml
+#
+#   # Run crawl (start with file output for testing)
+#   docker run -v "$(pwd)":/config docker.elastic.co/integrations/crawler:0.4.2 \
+#     jruby bin/crawler crawl /config/backend/scripts/crawler/elastic-docs-crawler.yml
+
+# Output configuration
+# Start with 'file' for testing, switch to 'elasticsearch' when validated
+output_sink: file
+output_dir: /config/backend/scripts/crawler/results/elastic-docs
+
+# HTTP settings
+user_agent: "ElasticDocsCrawler/1.0 (for demo-starter-ootb-data)"
+request_timeout: 30
+max_crawl_depth: 1  # Shallow crawl for testing
+
+# Domains to crawl
+domains:
+  # Elastic Documentation and Blog (single domain with multiple extraction rulesets)
+  - url: https://www.elastic.co
+    seed_urls:
+      # Documentation pages
+      - https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+      - https://www.elastic.co/guide/en/kibana/current/index.html
+      - https://www.elastic.co/guide/en/observability/current/index.html
+      - https://www.elastic.co/guide/en/security/current/index.html
+      - https://www.elastic.co/guide/en/enterprise-search/current/index.html
+      # Blog pages
+      - https://www.elastic.co/blog
+      - https://www.elastic.co/blog/latest
+    
+    # Allow both docs and blog (docs redirects from /guide/)
+    crawl_rules:
+      - policy: allow
+        type: regex
+        pattern: "^/(guide|docs|blog)/"
+      - policy: deny
+        type: regex
+        pattern: ".*"
+    
+    # Extract structured fields - different rulesets for docs vs blog
+    extraction_rulesets:
+      # Documentation pages extraction (both /guide/ and /docs/)
+      - url_filters:
+          - type: regex
+            pattern: "^/(guide|docs)/"
+        rules:
+          # Page title (usually in h1)
+          - action: extract
+            field_name: doc_title
+            selector: "h1"
+            source: html
+            join_as: string
+          
+          # Page summary/description (using og:description since meta_description is reserved)
+          - action: extract
+            field_name: doc_summary
+            selector: "meta[property='og:description']"
+            source: html
+            join_as: string
+          
+          # Section headings (h2, h3) for semantic search
+          - action: extract
+            field_name: section_headings
+            selector: "h2, h3"
+            source: html
+            join_as: array
+          
+          # Main content (article body)
+          - action: extract
+            field_name: doc_body
+            selector: "article, .guide-content, main"
+            source: html
+            join_as: string
+          
+          # Product/component name (from breadcrumbs or URL)
+          - action: extract
+            field_name: product_name
+            selector: ".breadcrumb a, nav[aria-label='Breadcrumb'] a"
+            source: html
+            join_as: array
+          
+          # Version information (if present)
+          - action: extract
+            field_name: version
+            selector: ".version-badge, [data-version]"
+            source: html
+            join_as: string
+      
+      # Blog posts extraction
+      - url_filters:
+          - type: begins
+            pattern: /blog/
+        rules:
+          # Blog post title
+          - action: extract
+            field_name: blog_title
+            selector: "h1, .blog-post-title, article h1"
+            source: html
+            join_as: string
+          
+          # Blog post summary/excerpt (using og:description since meta_description is reserved)
+          - action: extract
+            field_name: blog_summary
+            selector: "meta[property='og:description'], .blog-excerpt, .post-summary"
+            source: html
+            join_as: string
+          
+          # Author information
+          - action: extract
+            field_name: author
+            selector: ".author-name, .byline, [rel='author']"
+            source: html
+            join_as: string
+          
+          # Publication date
+          - action: extract
+            field_name: publish_date
+            selector: "time, .publish-date, [datetime]"
+            source: html
+            join_as: string
+          
+          # Blog categories/tags
+          - action: extract
+            field_name: categories
+            selector: ".blog-category, .tag, .post-tag"
+            source: html
+            join_as: array
+          
+          # Blog content
+          - action: extract
+            field_name: blog_body
+            selector: "article, .blog-content, .post-content"
+            source: html
+            join_as: string
+
+# Logging
+log_level: info  # Use 'debug' for troubleshooting

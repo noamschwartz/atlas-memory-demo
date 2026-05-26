@@ -1,0 +1,115 @@
+# Cloud Run Service with Sidecars (Template)
+# 
+# Deploy with: gcloud run services replace deploy/service.yaml --region=us-central1 --project=YOUR_PROJECT
+#
+# Container architecture:
+#   - nginx (main): Serves frontend, proxies /api to fastapi, /v1/traces to otel-collector
+#   - fastapi (sidecar): Backend API
+#   - otel-collector (sidecar): Receives traces from browser/backend, exports to Elastic APM
+#
+# 🔒 SECURITY: This service uses internal-and-cloud-load-balancing ingress.
+#    Direct access is BLOCKED. You MUST set up IAP after deployment.
+#    See docs/DEPLOYMENT.md for IAP setup instructions.
+#    NEVER change ingress to "all" or add "allUsers" for production.
+#
+# IMPORTANT: Replace these placeholders before deploying:
+#   - YOUR_SERVICE_NAME: Your Cloud Run service name
+#   - YOUR_PROJECT_ID: Your GCP project ID
+#   - *_PLACEHOLDER: Credential and config placeholders
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: YOUR_SERVICE_NAME
+  labels:
+    team: YOUR_TEAM
+    owner: YOUR_EMAIL
+    purpose: demo
+    project: YOUR_PROJECT
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/container-dependencies: '{"nginx":["fastapi","otel-collector"]}'
+        run.googleapis.com/startup-cpu-boost: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        # Main container: Nginx (serves frontend, proxies to sidecars)
+        - name: nginx
+          image: us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cloud-run-source-deploy/YOUR_SERVICE_NAME-nginx:PLACEHOLDER
+          ports:
+            - containerPort: 8080
+              name: http1
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.5"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+
+        # Sidecar: FastAPI backend
+        - name: fastapi
+          image: us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cloud-run-source-deploy/YOUR_SERVICE_NAME-fastapi:PLACEHOLDER
+          env:
+            - name: ELASTICSEARCH_URL
+              value: "ELASTICSEARCH_URL_PLACEHOLDER"
+            - name: ELASTIC_API_KEY
+              value: "ELASTIC_API_KEY_PLACEHOLDER"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://localhost:4318"
+            - name: OTEL_ENABLED
+              value: "true"
+          resources:
+            limits:
+              memory: 1Gi
+              cpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 2
+
+        # Sidecar: OTel Collector
+        - name: otel-collector
+          image: us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cloud-run-source-deploy/YOUR_SERVICE_NAME-otel:PLACEHOLDER
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "OTEL_ENDPOINT_PLACEHOLDER"
+            - name: ELASTIC_APM_SECRET_TOKEN
+              value: "APM_TOKEN_PLACEHOLDER"
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "0.25"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            failureThreshold: 10
+            timeoutSeconds: 2
+
+  traffic:
+    - latestRevision: true
+      percent: 100

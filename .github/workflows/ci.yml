@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend Build & Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # Note: submodules not needed for frontend CI
+        # hive-mind is documentation only, not build dependency
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+      
+      - name: Lint
+        working-directory: frontend
+        run: yarn lint
+      
+      - name: Type check
+        working-directory: frontend
+        run: yarn tsc --noEmit
+      
+      - name: Test
+        working-directory: frontend
+        run: yarn test
+      
+      - name: Build
+        working-directory: frontend
+        run: yarn build
+
+  backend:
+    name: Backend Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # Note: submodules not needed for backend CI
+        # hive-mind is documentation only, not build dependency
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Test deps live in pyproject.toml [dependency-groups] dev; requirements.txt
+          # is auto-generated from [project] dependencies only and excludes them.
+          pip install 'pytest>=8.0.0' 'pytest-asyncio>=0.24.0'
+
+      - name: Check imports
+        working-directory: backend
+        run: |
+          python -c "from app.main import app; print('✅ FastAPI app imports successfully')"
+
+      - name: Run tests
+        working-directory: backend
+        run: pytest -v
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for hardcoded localhost URLs
+        run: ./scripts/check-localhost-urls.sh
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # Note: submodules not needed - we ignore hive-mind in lint anyway
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+      
+      - name: Lint markdown files
+        run: |
+          markdownlint '**/*.md' \
+            --ignore node_modules \
+            --ignore frontend/node_modules \
+            --ignore backend/venv \
+            --ignore hive-mind \
+            --config .markdownlint.json || true
+        # Using || true to not fail on lint errors initially
+        # Remove || true once markdown is cleaned up
+

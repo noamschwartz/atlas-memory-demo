@@ -1,0 +1,78 @@
+# OpenTelemetry Collector Configuration for Cloud Run Sidecar
+# 
+# This collector runs as a sidecar, receiving traces from:
+#   - Browser (via Nginx proxy with CORS)
+#   - FastAPI backend (via localhost)
+#
+# Exports to Elastic APM via OTLP HTTP
+#
+# Environment variables required:
+#   - OTEL_EXPORTER_OTLP_ENDPOINT: Elastic APM endpoint (e.g., https://xxx.apm.us-central1.gcp.cloud.es.io:443)
+#   - ELASTIC_APM_SECRET_TOKEN: Bearer token for APM
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+        cors:
+          allowed_origins:
+            - "*"  # CORS handled by Nginx, allow all here
+          allowed_headers:
+            - "*"
+          max_age: 7200
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
+processors:
+  # Batch spans for efficient export
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+  # Add service namespace - customize for your project
+  attributes:
+    actions:
+      - key: service.namespace
+        value: elastic-agent-starter
+        action: upsert
+      - key: deployment.environment
+        value: cloud-run
+        action: upsert
+
+  # Memory limiter
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 200
+    spike_limit_mib: 50
+
+exporters:
+  # Export to Elastic APM via OTLP HTTP
+  otlphttp/elastic:
+    endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+    headers:
+      Authorization: "Bearer ${ELASTIC_APM_SECRET_TOKEN}"
+    tls:
+      insecure: false
+
+  # Debug logging
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlphttp/elastic, debug]
+
+  telemetry:
+    logs:
+      level: info

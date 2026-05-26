@@ -1,0 +1,15 @@
+{
+  "mappings": {
+    "properties": {
+      "title":      { "type": "text", "copy_to": "semantic_content" },
+      "text":       { "type": "text", "copy_to": "semantic_content" },
+      "semantic_content": {
+        "type": "semantic_text",
+        "inference_id": ".jina-embeddings-v5-text-small"
+      },
+      "category":   { "type": "keyword" },
+      "tags":       { "type": "keyword" },
+      "metadata":   { "type": "flattened" }
+    }
+  }
+}

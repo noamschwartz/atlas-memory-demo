@@ -1,0 +1,12 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Elastic Community
+    url: https://discuss.elastic.co/
+    about: Ask questions and get help from the Elastic community
+  - name: Hive Mind Patterns
+    url: https://github.com/elastic/hive-mind
+    about: Contribute patterns and troubleshooting guides to the shared knowledge base
+  - name: OOTB Data Documentation
+    url: docs/SHARED_SERVERLESS_PROJECT.md
+    about: View available datasets and agents in the shared serverless project
+

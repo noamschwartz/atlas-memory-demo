@@ -1,0 +1,12 @@
+# CODEOWNERS for atlas-memory-demo
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners
+* @noamschwartz
+
+# Documentation
+*.md @noamschwartz
+
+# GitHub config
+/.github/ @noamschwartz
+

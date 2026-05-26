@@ -1,0 +1,21 @@
+{
+  "mappings": {
+    "properties": {
+      "user_id":      { "type": "keyword" },
+      "agent_id":     { "type": "keyword" },
+      "session_id":   { "type": "keyword" },
+      "event_type":   { "type": "keyword" },
+      "role":         { "type": "keyword" },
+      "timestamp":    { "type": "date" },
+      "text": {
+        "type": "text",
+        "copy_to": "semantic_content"
+      },
+      "semantic_content": {
+        "type": "semantic_text",
+        "inference_id": ".jina-embeddings-v5-text-small"
+      },
+      "metadata":     { "type": "flattened" }
+    }
+  }
+}

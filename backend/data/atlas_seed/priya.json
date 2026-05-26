@@ -1,0 +1,1796 @@
+{
+  "user_id": "priya",
+  "episodic": [
+    {
+      "text": "okay so i finally got my developer API token, took forever to find it in the settings lol. is there a sandbox endpoint i can test against before i start hitting prod?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 897
+    },
+    {
+      "text": "Welcome, Priya! Yes, we have a sandbox at api-sandbox.lumio.io \u2014 it mirrors prod but all device states are simulated. Your token works on both. Would you like the quickstart doc?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 897
+    },
+    {
+      "text": "yes please send the quickstart. also does the sandbox support webhooks or only polling?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 897
+    },
+    {
+      "text": "Sandbox supports webhooks! You can register up to 5 endpoints. Events fire with a small artificial delay (~800ms) to simulate real mesh latency.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 897
+    },
+    {
+      "text": "nice. ordered the starter kit \u2014 4 bulbs, 2 motion sensors, the hub. should arrive thursday",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 893
+    },
+    {
+      "text": "User unboxed Lumio Hub Gen2 and paired 4 A19 bulbs in living room and study. Motion sensors placed at entryway and staircase landing.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 889
+    },
+    {
+      "text": "hub is up, bulbs paired fine, but the staircase motion sensor keeps dropping off the mesh every couple hours. i have to re-pair it manually. duplex so the staircase is a weird dead zone maybe?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 888
+    },
+    {
+      "text": "That sounds like a mesh range issue. Try adding a plug-in range extender or a smart plug on the first-floor landing \u2014 it'll act as a repeater. What is the approximate distance from hub to staircase sensor?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 888
+    },
+    {
+      "text": "probably 8 metres and one concrete floor slab between them. will try a smart plug as repeater, good idea",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 888
+    },
+    {
+      "text": "bought a lumio smart plug, placed it midway on staircase wall. sensor has been stable for 24 hrs now. sorted!",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 886
+    },
+    {
+      "text": "spent the whole evening writing a python script to pull device states via the REST API and push them into a little sqlite log. want to visualize usage patterns over the month",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 883
+    },
+    {
+      "text": "That is a great use case. Just note that polling more than once every 5 seconds per device can trigger rate limiting. If you want near-real-time data, webhooks are more efficient.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 883
+    },
+    {
+      "text": "right, switched to webhooks for state-change events and only polling for hourly snapshots. much cleaner",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 882
+    },
+    {
+      "text": "User created first custom scene: 'Morning Studio' \u2014 warm 3000K at 60% in study, off in bedroom, motion trigger disabled until 7am.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 880
+    },
+    {
+      "text": "hey quick question \u2014 can i trigger a scene via API with a payload that overrides just one device in the scene without creating a whole new scene? like partial overrides?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 879
+    },
+    {
+      "text": "Not directly in the scene endpoint, but you can fire the scene and then immediately send a device-level PATCH to override a single device state. The scene applies first, device patch wins on top. Race condition is under 50ms internally so it is reliable.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 879
+    },
+    {
+      "text": "oh thats a clever workaround, thanks. will use that",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 879
+    },
+    {
+      "text": "ugh billing question \u2014 i was charged twice for the monthly pro plan this cycle. invoice numbers LM-88421 and LM-88503, same billing date",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 875
+    },
+    {
+      "text": "I can see both charges. That looks like a duplicate triggered by a payment retry. I am raising a refund for LM-88503 now \u2014 should reflect in 5-7 business days. Apologies for the hassle.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 875
+    },
+    {
+      "text": "great thanks. also while i have you \u2014 is there a way to get energy consumption data per device or only aggregate?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 875
+    },
+    {
+      "text": "Per-device energy data is available for smart plugs and the newer dimmable bulbs (the ones with the E suffix in model code). Standard A19 bulbs only report aggregate via hub. The endpoint is GET /v2/devices/{id}/energy.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 875
+    },
+    {
+      "text": "okay its friday evening, partner made filter coffee and we are just sitting on the terrace. clio is chasing something in the garden. set a 'Terrace Evening' scene \u2014 warm amber, 20% brightness, music playing via spotify connect. life is good",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 872
+    },
+    {
+      "text": "working on the Koramangala bungalow project at the office today. tried dropping Lumio device placement into my Revit model as generic families just to see how it looks. would love an actual Revit plugin honestly",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 869
+    },
+    {
+      "text": "That is genuinely on our product roadmap \u2014 a BIM plugin for Revit and ArchiCAD. No ETA I can share yet, but I will flag your interest to the product team. In the meantime, would RFA family files with accurate dimensions help?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 869
+    },
+    {
+      "text": "yes please, RFA files would be super useful for now! even rough geometry is fine",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 869
+    },
+    {
+      "text": "User downloaded Lumio device RFA library pack and imported Hub, bulb, and sensor families into active Revit project for Koramangala bungalow.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 867
+    },
+    {
+      "text": "the RFA files worked well, thank you. placed sensors and hub in the Revit model, client loved seeing it in the 3D walkthrough. small thing but impressive",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 866
+    },
+    {
+      "text": "pre-monsoon now and humidity in the house is climbing. noticed the motion sensors are giving phantom triggers in the morning \u2014 like 5am when nobody is up. is humidity a known issue?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 860
+    },
+    {
+      "text": "Yes, high humidity can cause condensation on the sensor lens and trigger false positives, especially in the early morning when temps drop slightly. Try the sensitivity setting in the app \u2014 dial it down one notch. Also make sure the sensor is not near an AC vent.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 860
+    },
+    {
+      "text": "turned sensitivity down, also wiped the lens. no phantom triggers last two mornings. monsoon life",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 858
+    },
+    {
+      "text": "monsoon hit Bengaluru hard today. power cut for about 40 minutes in the evening. inverter kicked in and kept the hub and a few lights running which was great. lumio hub stayed online the whole time, didnt lose any device pairings",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 853
+    },
+    {
+      "text": "Glad the inverter kept things running! Just a heads-up: if the hub loses mains for more than ~2 hours, it writes a checkpoint to flash so pairings are safe even on a full restart.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 853
+    },
+    {
+      "text": "good to know. we get outages 3-4 times a week during heavy rain so that is reassuring",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 853
+    },
+    {
+      "text": "User created 'Power Cut Mode' scene: dims all non-essential lights to 10%, turns off decorative strips, sends a push notification to partner's phone.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 851
+    },
+    {
+      "text": "made a power-cut scene that auto-triggers when hub detects mains drop (via the energy sensor on the main plug). pretty happy with how it works. took maybe an hour of API tinkering",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 850
+    },
+    {
+      "text": "That is a really elegant solution. The mains-drop detection via energy sensor is not something most users think of \u2014 honestly should be a documented example in our API cookbook.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 850
+    },
+    {
+      "text": "feel free to use it as an example! happy to write a short blog post for lumio if that would help",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 850
+    },
+    {
+      "text": "app crashed on me twice today when i tried to open the scene editor. android 14, pixel 7. just goes to a white screen and dies",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 846
+    },
+    {
+      "text": "Thanks for the report. There is a known issue with the scene editor on certain Android 14 builds \u2014 a patch is in review. Workaround for now: force-close, clear app cache, reopen. It usually loads on second try.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 846
+    },
+    {
+      "text": "cache clear worked. will wait for the patch. btw i now have 23 scenes, probably scene sprawl starting lol. need to organise them",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 846
+    },
+    {
+      "text": "visited amma this weekend. her flat in Jayanagar is pretty bare-bones, just tube lights. been thinking about adding lumio devices there so i can check in remotely \u2014 she lives alone and i worry",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 843
+    },
+    {
+      "text": "That is a really thoughtful idea. For a family member living alone, the motion sensor + notification combo is popular for gentle check-ins without being intrusive. Would you like recommendations for a starter setup for her flat?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 843
+    },
+    {
+      "text": "yes please. she is in her early 70s, not very tech-comfortable, so it has to be totally invisible for her \u2014 no app, no voice commands needed, just lights that work normally but i can see activity remotely",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 843
+    },
+    {
+      "text": "Perfect use case for passive monitoring. I would suggest: Hub Mini (tiny, plug-in), 3-4 bulbs replacing existing fittings, 2 motion sensors in kitchen and living room. All controllable by you remotely, she just uses the wall switch as normal. Motion events push to your phone.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 843
+    },
+    {
+      "text": "ordered the hub mini and a few bulbs and sensors for ammas flat. will install next weekend",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 841
+    },
+    {
+      "text": "co-living retrofit project started this week \u2014 big one, 24-unit building near Whitefield. client wants smart lighting throughout. doing a feasibility study on Lumio mesh coverage across 4 floors, concrete construction",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 838
+    },
+    {
+      "text": "For a 24-unit 4-floor building, you will likely need a hub per floor minimum, plus range extender smart plugs in corridors. The mesh is ZigBee-based so concrete is tough but manageable with enough repeater nodes. Do you want the commercial coverage planning guide?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 838
+    },
+    {
+      "text": "yes send the coverage guide. also is there a multi-hub management API? i want to control all floors from one integration",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 838
+    },
+    {
+      "text": "Yes \u2014 the Organization API lets you group multiple hubs under one account and address them all from a single API key. Scenes can span hubs. It is under /v2/org/ in the docs.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 838
+    },
+    {
+      "text": "amazing, exactly what i needed for the whitefield project. starting the coverage simulation in revit now with the RFA files",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 838
+    },
+    {
+      "text": "sunday morning, making dosas, clio is begging for crumbs as usual. set the kitchen to bright daylight 5000K for cooking. small joys",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 835
+    },
+    {
+      "text": "installed everything at ammas flat today. took about 2 hours. she has no idea the sensors are even there which is the point. already got two motion check-in notifications today and it is so reassuring to know she is up and moving around",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 832
+    },
+    {
+      "text": "hey quick one \u2014 my webhook endpoint is returning 429s intermittently during the morning automation chain. is there a rate limit i should know about?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 672
+    },
+    {
+      "text": "Hi Priya! Yes, the developer API has a soft limit of 120 requests/min per token. Your morning chain might be firing too many scene triggers in a burst. I'd suggest batching or adding a small delay between calls.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 672
+    },
+    {
+      "text": "ok that tracks. i'll stagger the scene triggers by 2s. also noticed the bungalow project client wants their Lumio setup mirrored in Revit \u2014 any update on the BIM metadata export i requested?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 671
+    },
+    {
+      "text": "logged a request last week for the BIM export endpoint, still waiting. will nudge the dev team and get back to you.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 671
+    },
+    {
+      "text": "the humidity in Indiranagar right now is insane. Clio is basically a wet towel. are the motion sensors rated for high humidity? seeing some false triggers.",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 668
+    },
+    {
+      "text": "Pre-monsoon humidity check: indoor humidity at Priya's duplex recorded above 82% for 3 consecutive days. Motion sensor in hallway logged 14 unverified trigger events.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 667
+    },
+    {
+      "text": "yeah so the hallway sensor is definitely acting up. it triggered the 'evening wind-down' scene at 2pm yesterday. can i add a humidity threshold condition to that scene?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 667
+    },
+    {
+      "text": "Yes! You can add an ambient-condition guard in the scene JSON \u2014 set a humidity_below condition. Want me to paste a sample snippet?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 667
+    },
+    {
+      "text": "yes please, that would be great",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 667
+    },
+    {
+      "text": "Here you go: add `\"conditions\": [{\"type\": \"humidity\", \"operator\": \"lt\", \"value\": 78}]` inside your trigger block. This will suppress the scene if humidity is at or above 78%.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 667
+    },
+    {
+      "text": "perfect. also my mom keeps calling me saying the lights in her flat are 'behaving strangely'. she's in Jayanagar. i set her up on a shared home but honestly the interface is too complex for her",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 664
+    },
+    {
+      "text": "understood. you can set her to a restricted 'simplified' role in the home settings \u2014 she'd only see a basic on/off panel, no scenes or automations. would that help?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 664
+    },
+    {
+      "text": "oh that's actually ideal. doing it now. thanks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 664
+    },
+    {
+      "text": "monsoon hit properly today. power went out twice. inverter kicked in fine but the lumio hub rebooted each time and lost the active scene state. annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 661
+    },
+    {
+      "text": "Hub at Priya's duplex rebooted twice within a 4-hour window. Scene state not restored post-reboot. Inverter transition detected via power fluctuation logs.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 661
+    },
+    {
+      "text": "Scene state persistence on reboot is a known gap \u2014 we're working on it. Workaround: set a 'on hub reconnect' automation that re-triggers your default scene. Happy to help you write that.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 661
+    },
+    {
+      "text": "yes let's do that. also is there a way to suppress the 'hub reconnected' push notification? i got 6 of them last night",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 660
+    },
+    {
+      "text": "You can mute system notifications per-device in the app under Settings > Notifications > Hub Events. You can set a cooldown so you only get one alert per hour max.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 660
+    },
+    {
+      "text": "done. much better. okay weekend catch-up: i spoke about smart-home integration at a design conference in Koramangala on Friday. dropped Lumio's API into the talk. people were genuinely curious about the BIM angle",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 657
+    },
+    {
+      "text": "That's amazing, Priya! Would you be open to us sharing a brief quote or case study reference on our developer blog? No pressure at all.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 657
+    },
+    {
+      "text": "sure, dm me details. also i'm building out a co-living retrofit project now \u2014 like 22 units in a single building. each unit needs its own home but i also need a building-level view. does the API support nested homes?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 655
+    },
+    {
+      "text": "Not natively yet \u2014 nested homes is on the roadmap. Current workaround is using home groups via the API with a parent tag. It's a bit manual but functional. I can walk you through it.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 655
+    },
+    {
+      "text": "yeah let's do a call. this project is going to be a big one and i want the smart-home layer to be solid before handover",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 655
+    },
+    {
+      "text": "absolutely. i'll book you with our developer solutions team \u2014 expect a calendar link shortly.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 654
+    },
+    {
+      "text": "had a great call with the solutions team yesterday. they understood the co-living use case immediately. feeling good about this project",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 651
+    },
+    {
+      "text": "also random q \u2014 does lumio do anything with occupancy data? not in a surveillance way, just for energy reporting. my bungalow client wants monthly energy breakdowns",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 649
+    },
+    {
+      "text": "Yes! The energy API endpoint gives per-device consumption data with timestamps. You can cross-reference with occupancy scenes to estimate usage patterns. No raw occupancy data is stored \u2014 just event logs.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 649
+    },
+    {
+      "text": "good, my client would ask about privacy. okay i'm gonna build a small report generator in python that pulls from the energy endpoint. will test this week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 649
+    },
+    {
+      "text": "Priya's API token made 340 calls to /v2/energy/devices over a 48-hour period. No errors logged. New script appears to be in test phase.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 646
+    },
+    {
+      "text": "energy script is working! pulling data cleanly. one issue \u2014 timestamps are in UTC and i need IST. is there a timezone param i'm missing?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 645
+    },
+    {
+      "text": "There's no server-side timezone param yet \u2014 all timestamps are UTC. You'll need to offset by +5:30 on your end. Sorry, I know it's a gap. It's on the backlog.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 645
+    },
+    {
+      "text": "yeah that's fine i can handle it client-side. it's just a bit annoying to document for handover",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 645
+    },
+    {
+      "text": "Clio chewed through something near the router again i think. hub went offline for an hour. checked the app and it was showing all devices as 'unreachable' but the lights were working fine locally. misleading status",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 641
+    },
+    {
+      "text": "Ha, Clio strikes again! Yes, if the hub loses internet but local LAN is intact, devices still work locally but show as unreachable in the cloud view. We should show a 'local only mode' status \u2014 noted as feedback.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 641
+    },
+    {
+      "text": "exactly, that would be way clearer. also my partner Rohit asked why the 'good morning' scene is triggering at 6am on weekends. apparently i set it up wrong lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 638
+    },
+    {
+      "text": "easy fix \u2014 in the scene schedule, there's a 'days active' selector. uncheck Saturday and Sunday and you're done. Rohit will thank you.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 638
+    },
+    {
+      "text": "done. he's already happier. okay bigger thing \u2014 i want to set up fall detection for my mom. she lives alone and i worry. what are my options with lumio?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 635
+    },
+    {
+      "text": "We don't have native fall detection hardware yet, but we integrate with a few third-party sensors. The most reliable pairing right now is with passive infrared + pressure mat combos. I can send you a compatibility list.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 635
+    },
+    {
+      "text": "please do. also is there an alert-to-contact feature? like if she falls i want a notification AND for rohit to get one too",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 635
+    },
+    {
+      "text": "Yes \u2014 you can add emergency contacts per home. They'll get a push + SMS on a triggered alert. Go to her home settings > Emergency > Add Contact.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 634
+    },
+    {
+      "text": "ordered the pressure mat sensor. should arrive by end of week. also billing q \u2014 i'm on the developer plan but the co-living project will have 22 homes. do i need separate plans per home or is it covered?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 632
+    },
+    {
+      "text": "Great question. The developer plan covers up to 5 homes under your account. Beyond that, there's a multi-home commercial add-on. I'll have someone from the billing team reach out with options for 22 units.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 632
+    },
+    {
+      "text": "sounds good. also it's raining so hard right now, the skylight sensor at the bungalow site flagged 'moisture detected' 3 times. it's an outdoor sensor though \u2014 is that expected?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 629
+    },
+    {
+      "text": "Outdoor sensors will flag moisture in heavy rain \u2014 that's expected behavior. You can mark specific sensors as 'outdoor type' in settings which adjusts alert thresholds and suppresses false indoor-style warnings.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 629
+    },
+    {
+      "text": "oh i didn't know that setting existed. marking it now. the bungalow client already called me panicking about the alerts lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 629
+    },
+    {
+      "text": "pressure mat arrived! setting it up at mom's place now. the pairing was surprisingly smooth. added rohit as emergency contact. testing the alert flow",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 625
+    },
+    {
+      "text": "Fall detection sensor successfully paired at secondary home (Jayanagar). Emergency contacts configured: 2 contacts added. Test alert triggered and acknowledged.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 625
+    },
+    {
+      "text": "test alert worked perfectly. rohit got the notification before i did actually haha. mom thought it was funny that we were testing if she'd 'fall'. she made filter coffee to celebrate",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 624
+    },
+    {
+      "text": "Love that! Glad it's set up and working. Your mum sounds brilliant. Let us know if you want to adjust the sensitivity or alert delay.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 624
+    },
+    {
+      "text": "one thing \u2014 the mat triggers if she just shuffles near the door in the morning. sensitivity might be too high. can i add a time-of-day exception like 6-8am when she's just doing her morning routine?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 622
+    },
+    {
+      "text": "Yes, you can add a time-window suppression rule to the sensor alert. Set 'suppress alerts between 06:00 and 08:00 IST' in the sensor's alert configuration. You'll still see the events in the log, just no notification.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 622
+    },
+    {
+      "text": "that's exactly what i needed. okay this week is chaos \u2014 presenting the co-living smart-home layer to the developer client on Friday. wish me luck",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 619
+    },
+    {
+      "text": "hey so the monsoon hit hard last night, lost power for like 40 mins but the inverter kept the Lumio hub alive \u2014 scenes switched fine the whole time. honestly impressed",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 448
+    },
+    {
+      "text": "That's great to hear! The hub is designed to stay live on backup power as long as the inverter covers the minimum draw. Glad the scenes held up during the outage.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 448
+    },
+    {
+      "text": "one thing though \u2014 after power came back, two of the smart plugs in the kitchen re-announced themselves like new devices. had to re-link them to the 'morning coffee' scene manually. bit annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 447
+    },
+    {
+      "text": "Hub lost power event triggered, 2 Lumio smart plugs (kitchen cluster) dropped and rejoined mesh. User manually re-associated devices to existing scene.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 447
+    },
+    {
+      "text": "is there a way to make plugs retain scene membership even after a rejoin? feels like this should just work",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 446
+    },
+    {
+      "text": "Totally fair ask. Scene membership is stored in the hub so a rejoin should re-map automatically \u2014 sounds like a sync gap. Can you share the hub diagnostic log from that evening via the app? That'll help the team trace it.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 446
+    },
+    {
+      "text": "sent. also \u2014 humidity in the house is wild right now, like 88% some mornings. my Lumio sensors are reading way high and triggering the 'evening wind-down' scene at 11am because the lux + humidity combo tips it over. need to rethink those thresholds",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 444
+    },
+    {
+      "text": "yeah i bumped the humidity threshold from 70 to 85 in the automation condition and added a time-of-day gate so it only runs after 7pm. seems to be holding",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 443
+    },
+    {
+      "text": "Smart fix! Adding a time gate is the cleanest way to prevent false triggers during monsoon mornings. Let us know if the 85% threshold still trips unexpectedly.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 443
+    },
+    {
+      "text": "Clio keeps setting off the motion sensor in the hallway at 3am and turning all the downstairs lights on. she's a 25kg indie so yeah, not a small target for the sensor lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 441
+    },
+    {
+      "text": "Ha, that's a classic! If the sensor supports a height/angle adjustment you can tilt it upward slightly so it catches human-height movement but misses floor-level activity. Alternatively, set a pet-mode sensitivity level in the sensor settings if your model supports it.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 441
+    },
+    {
+      "text": "tilted the hallway sensor about 15 degrees up, fixed it. Clio is now free to roam at 3am without staging a light show",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 440
+    },
+    {
+      "text": "been deep in the Koramangala bungalow project this week \u2014 trying to map out lighting zones in Revit and then push them straight to Lumio via the API. the room-id alignment between Revit spaces and Lumio zones is still a manual headache",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 438
+    },
+    {
+      "text": "User is attempting to sync Revit space GUIDs with Lumio zone IDs for a residential bungalow project. Manual mapping currently required. Feature request noted: auto-match by room name string.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 438
+    },
+    {
+      "text": "honestly if the API accepted a room-name field and did fuzzy matching against existing zones that alone would save me an hour per project",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 437
+    },
+    {
+      "text": "Logging this as a feature request \u2014 fuzzy name-match on zone creation via API. I can see how valuable that would be for BIM workflows. I'll flag it to the product team with your use-case details.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 437
+    },
+    {
+      "text": "my monthly bill looks off \u2014 shows 14 devices but i only have 11 active right now. are the 3 deleted plugs still being counted?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 435
+    },
+    {
+      "text": "Good catch. Deleted devices can sometimes linger in the billing snapshot if they were active during any part of the billing cycle. I'm checking your account now \u2014 looks like 3 devices were removed mid-cycle so you'll see a prorated credit on the next bill.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 435
+    },
+    {
+      "text": "ok good. also can you send invoices in INR? keeps showing USD and my accountant keeps asking me to convert everything",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 434
+    },
+    {
+      "text": "Absolutely \u2014 I've updated your billing currency preference to INR. The next invoice onwards will reflect that. Historical invoices stay in the original currency but I can generate an INR-converted summary if that helps your accountant.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 434
+    },
+    {
+      "text": "that summary would be great actually, yes please",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 434
+    },
+    {
+      "text": "went to amma's place today to check in. she's been leaving the kitchen light on all night again. thinking seriously about adding a Lumio sensor over there to auto-manage it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 431
+    },
+    {
+      "text": "That sounds like a thoughtful setup. A motion+ambient sensor in the kitchen could auto-off after inactivity. Would you want to manage her flat under a separate Lumio home or add it as a second location under your existing account?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 431
+    },
+    {
+      "text": "second location makes more sense so i can see everything in one app. how many locations does my plan support?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 430
+    },
+    {
+      "text": "Your current plan supports up to 3 locations. Adding your mother's flat would be location 2 \u2014 you'd manage it separately but it's visible from the same app dashboard.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 430
+    },
+    {
+      "text": "ok setting it up this weekend. ordered a starter kit for her place. also want to eventually add fall detection \u2014 she had a small fall last month, nothing serious but it scared us",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 429
+    },
+    {
+      "text": "I'm sorry to hear that \u2014 glad she's okay. Lumio's fall-detection module pairs with the motion sensors and uses pattern analysis to distinguish falls from normal movement. It's in the safety add-ons section of the app. Happy to walk you through setup when you're ready.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 429
+    },
+    {
+      "text": "weekend update: got the starter kit installed at amma's. she was very suspicious of the little sensors lol. had to explain three times that no one is watching her, just the lights",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 426
+    },
+    {
+      "text": "Ha, that's such a relatable setup conversation! The app has a privacy summary page you can show her \u2014 plain language, no technical jargon \u2014 which sometimes helps reassure folks.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 426
+    },
+    {
+      "text": "Second location 'Amma flat' created under user account. 4 devices registered: 2 smart bulbs, 1 motion sensor, 1 smart plug. Fall-detection module not yet activated.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 425
+    },
+    {
+      "text": "app crashed twice today when i tried to open the second location. just goes white and dies. on Android, latest version",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 424
+    },
+    {
+      "text": "Apologies for that! There's a known issue with the multi-location switcher on Android when a new location has fewer than 5 devices \u2014 a fix is in the next app release. In the meantime, force-closing and reopening the app usually resolves it for the session.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 424
+    },
+    {
+      "text": "yeah force close worked. annoying but manageable. also the motion sensor at amma's is mega sensitive, turning lights on when the ceiling fan oscillates past it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 423
+    },
+    {
+      "text": "lower the sensitivity to medium or low in the sensor settings \u2014 ceiling fan oscillation is a common culprit. If her fan is near the sensor, repositioning by even 30cm can also help a lot.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 423
+    },
+    {
+      "text": "got asked to give a talk at an architecture conference in Pune next month \u2014 they want me to speak on 'smart homes as architecture not afterthought'. obviously going to mention the Lumio API integration work heavily",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 420
+    },
+    {
+      "text": "That sounds fantastic! Would you like any official Lumio documentation, API case study materials, or a point of contact on our partnerships team to co-credit the integration work?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 420
+    },
+    {
+      "text": "yes to all three honestly. case study materials especially \u2014 something visual would be great for slides",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 419
+    },
+    {
+      "text": "the co-living retrofit project just kicked off \u2014 24-unit building in Whitefield. this is going to be my biggest Lumio deployment by far. already dreading the zone naming conventions",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 416
+    },
+    {
+      "text": "24 units is exciting! For large deployments some users go with a structured naming convention like FloorUnit_RoomType (e.g. 02A_Bedroom) to keep API calls predictable. Want me to share a naming schema template?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 416
+    },
+    {
+      "text": "yes please send that. also does the API support bulk zone creation from a JSON payload? doing it one by one would take forever",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 415
+    },
+    {
+      "text": "Bulk zone creation via POST with a JSON array is supported on the pro tier \u2014 endpoint is /v2/zones/batch. Max 50 zones per call. I'll drop the full docs link in chat.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 415
+    },
+    {
+      "text": "okay the batch endpoint is working great. created 48 zones in two calls. this is exactly what i needed, why did i not know about this earlier",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 413
+    },
+    {
+      "text": "so happy it's working! The batch endpoint is a bit buried in the docs \u2014 noted that it needs better visibility. Glad it's saving you time on the Whitefield project.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 413
+    },
+    {
+      "text": "random question \u2014 does Lumio have a recommended approach for shared spaces in co-living? like common areas where you want resident-triggered scenes but not resident-configurable ones",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 410
+    },
+    {
+      "text": "Yes \u2014 the permission model lets you assign 'trigger-only' access to a zone. Residents can activate predefined scenes but can't edit or create them. It's under Location Settings > Access Roles. Good fit for lobbies, terraces, shared kitchens.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 410
+    },
+    {
+      "text": "perfect, that's exactly what i needed. implementing that for the common terrace and lobby zones this week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 409
+    },
+    {
+      "text": "had a really lovely weekend \u2014 cooked a big pot of sambar, took Clio to Cubbon Park, completely ignored my laptop. sometimes you just need that",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 406
+    },
+    {
+      "text": "Sounds like a perfect reset! Hope Clio enjoyed the park. Let us know when you're back in project mode.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 406
+    },
+    {
+      "text": "back in it. fall detection at amma's \u2014 i enabled the module but i'm not sure it's calibrated right. what does the baseline learning period look like?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 403
+    },
+    {
+      "text": "The fall-detection module runs a 7-day passive learning period after activation, mapping normal movement patterns in the space. You'll get a notification when calibration is complete. During this time it won't fire alerts \u2014 just observing.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 403
+    },
+    {
+      "text": "ok good to know. amma called me confused because she got a notification saying 'your space is being learned' and thought someone was learning about her lol. the copy on that notif could be friendlier",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 402
+    },
+    {
+      "text": "Ha, that's a really valid point \u2014 'your space is being learned' is pretty ominous out of context. Flagging this to the UX writing team. Something like 'Setting up your safety baseline \u2014 no alerts will fire this week' would be much clearer.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 402
+    },
+    {
+      "text": "exactly. also can i set the fall alert to call me AND send a message to my partner? want redundancy",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 401
+    },
+    {
+      "text": "Yes \u2014 you can add multiple contacts under Safety Alerts with different notification types per contact. Set yourself as call + push and your partner as SMS + push. Both will trigger simultaneously.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 401
+    },
+    {
+      "text": "done. also while i was in the safety settings i noticed there's a 'panic button' feature i hadn't seen before. when did that land?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 400
+    },
+    {
+      "text": "That rolled out a couple of months ago \u2014 it lets any household member do a 5-second long-press on any Lumio switch to send an alert to your emergency contacts. Works even offline if the hub is up. It's opt-in per location.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 400
+    },
+    {
+      "text": "enabling that for amma's place right now. honestly this is the feature i didn't know i needed. thanks for flagging it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 400
+    },
+    {
+      "text": "Panic button feature enabled at 'Amma flat' location. Emergency contacts configured: Priya (call + push), partner (SMS + push). Fall-detection calibration ongoing.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 399
+    },
+    {
+      "text": "hey lumio, clio knocked over a lamp again and it disconnected \u2014 how do i re-pair without losing my scene assignments?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 224
+    },
+    {
+      "text": "No worries! Hold the lamp's button for 6 seconds until it blinks amber, then go to Devices > Add New in the app. Your scene assignments are stored server-side so they'll reattach automatically once it's back on the same device ID.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 224
+    },
+    {
+      "text": "ok that worked, she is absolutely unrepentant btw",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 224
+    },
+    {
+      "text": "lumio morning scene fired at 5:45 instead of 6:15 today \u2014 did the IST offset shift again after that app update?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 221
+    },
+    {
+      "text": "We did push a timezone library patch recently and a handful of IST users saw a 30-min drift. Go to Settings > Location & Time > force-sync and it should correct. Sorry about the early wake-up!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 221
+    },
+    {
+      "text": "force sync fixed it, thanks. though honestly 5:45 wasnt the worst, got through my whole coffee before the client calls",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 220
+    },
+    {
+      "text": "working on that bungalow project in Whitefield \u2014 client wants occupancy-linked lighting in every room. can i push occupancy sensor states to my Revit model via the API or do i have to pull?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 218
+    },
+    {
+      "text": "Right now the API is pull-only for sensor telemetry \u2014 GET /devices/{id}/state on a polling interval. We don't have a push webhook for occupancy yet but it's on the roadmap. Some folks use a lightweight cron + webhook relay as a workaround.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 218
+    },
+    {
+      "text": "yeah i figured, i'll just set a 10s poll in my Dynamo script. not elegant but it works for the presentation mock",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 217
+    },
+    {
+      "text": "User created a new scene group called 'Whitefield-Ref' with 4 virtual devices for BIM simulation testing.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 216
+    },
+    {
+      "text": "amma called saying her bedroom light 'has a mind of its own' \u2014 pretty sure the fall-detection nudge scene is misfiring. what triggers count as a fall event exactly?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 214
+    },
+    {
+      "text": "The fall-detection algorithm flags events when the sensor reads a rapid vertical acceleration above 2.5g followed by stillness for 8+ seconds. If she's moving from the bed to the attached bathroom at night, the sit-to-stand motion can occasionally false-positive. You can raise the sensitivity threshold in the Care settings.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 214
+    },
+    {
+      "text": "raised threshold to medium-high, also added a 12-second stillness delay. will monitor this week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 213
+    },
+    {
+      "text": "weekend was nice, took amma to the botanical garden. she keeps asking why the lights at her place 'know' when she wakes up \u2014 i said magic, she accepted that",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 210
+    },
+    {
+      "text": "That's the best kind of review we could get honestly.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 210
+    },
+    {
+      "text": "billing question \u2014 i'm on the Pro API tier but i noticed i got charged for 1.2M calls last month, my scripts shouldnt be anywhere near that. can you show me a breakdown by endpoint?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 207
+    },
+    {
+      "text": "Pulling your usage log now. Looks like GET /devices/list was called 940k times \u2014 that's unusual. Do you have any script running on a very tight loop without caching the device list?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 207
+    },
+    {
+      "text": "oh god yes \u2014 my Dynamo script was re-fetching the full device list on every occupancy poll instead of caching. fixed, so embarrassing",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 207
+    },
+    {
+      "text": "We can apply a one-time courtesy credit for the overage since it was clearly a script error. Crediting 0.2M calls back to your account.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 206
+    },
+    {
+      "text": "that is very decent of you, thank you. i owe lumio a shoutout at my next talk",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 206
+    },
+    {
+      "text": "monsoon humidity is back and my hallway strip lights are flickering again \u2014 same thing as last year. i already sealed the connectors, any other ideas?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 201
+    },
+    {
+      "text": "Beyond connector sealing, check if the driver unit itself is in a ventilated spot \u2014 condensation inside the driver is a common cause of flicker in high-humidity climates. A small silica packet near the driver can help. Also make sure the strip's IP rating is at least IP54 for exposed hallway areas.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 201
+    },
+    {
+      "text": "driver was basically in a closed cabinet, moved it to an open shelf and added silica packs. no flicker since yesterday evening",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 199
+    },
+    {
+      "text": "co-living retrofit project kicked off this week \u2014 14 units, shared corridors, central courtyard. thinking of using Lumio mesh for the corridor lighting so each unit manager cant accidentally override common area scenes. is there a permission hierarchy i can set?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 196
+    },
+    {
+      "text": "Yes \u2014 in the Pro tier you can set devices as 'Admin-only' so sub-users (unit managers) can control their room devices but not admin-flagged common area ones. Check the Team Permissions section under your account. You can also lock specific scenes from sub-user editing.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 196
+    },
+    {
+      "text": "perfect, exactly what i needed. setting up a demo account for the client walkthrough next week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 195
+    },
+    {
+      "text": "User configured 14 sub-user accounts with restricted device permissions and locked 3 common-area scenes as admin-only.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 193
+    },
+    {
+      "text": "power cut hit amma's place for 3 hours last night during the storm \u2014 inverter kicked in as expected but her lumio hub lost its wifi and didn't reconnect when power came back. she had to call me at midnight",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 190
+    },
+    {
+      "text": "The hub should auto-reconnect on power restore but there's a known issue where if the router comes back slower than the hub it can get stuck. A fix: go to her hub settings and enable 'Extended reconnect retry' \u2014 it'll keep trying for 10 minutes instead of 2.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 190
+    },
+    {
+      "text": "enabled that, also set her nightlight to run on local fallback so even if hub is offline the bedroom stays lit at night. no more midnight calls please",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 189
+    },
+    {
+      "text": "gave a talk at the Bengaluru Design Forum yesterday \u2014 mentioned how i use Lumio API with Revit to prototype lighting schemes before a single fixture is installed. got a lot of questions from other architects",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 185
+    },
+    {
+      "text": "That's amazing to hear! If you ever want to co-write a case study or do a webinar with us, the partnerships team would love to chat.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 185
+    },
+    {
+      "text": "maybe after the co-living project wraps, i'll have better numbers to share. remind me in a couple months?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 185
+    },
+    {
+      "text": "the app keeps asking me to rate my experience every time i open it this week \u2014 is there a way to snooze that prompt? its getting annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 181
+    },
+    {
+      "text": "Ugh, that prompt loop is a known bug in the current app build \u2014 it's not respecting the 'already rated' flag for some accounts. Logging it for you. You can temporarily dismiss it by tapping 'Later' three times which triggers a 30-day suppress.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 181
+    },
+    {
+      "text": "Clio has started sleeping right under the motion sensor in the living room which means my 'nobody home' scene never activates lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 177
+    },
+    {
+      "text": "Ha! You can set a pet-height exclusion zone in the sensor settings if your sensor model supports it \u2014 basically ignores motion below 60cm. Won't work if Clio has learned to stand on the sofa though.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 177
+    },
+    {
+      "text": "she absolutely stands on the sofa, we are powerless. but the height filter helped a bit, thanks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 176
+    },
+    {
+      "text": "trying to build a humidity-triggered scene \u2014 if hallway humidity goes above 80% dim the strip lights to 20% to reduce heat. is that possible with the API?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 172
+    },
+    {
+      "text": "Yes! Use the Automation rules endpoint \u2014 POST /automations with a condition block using sensor_type: humidity, operator: gt, value: 80 and an action to set your strip to 20% brightness. Happy to share a sample payload if useful.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 172
+    },
+    {
+      "text": "yes please send the sample payload, that would save me 20 mins of docs spelunking",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 172
+    },
+    {
+      "text": "User successfully deployed humidity-triggered dimming automation on hallway strip. Automation fired 3 times in first 48 hours.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 169
+    },
+    {
+      "text": "quick one \u2014 does lumio have an integration with any air quality monitors? thinking about the co-living common areas",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 165
+    },
+    {
+      "text": "We have a native integration with Airthings and a community-built connector for uHoo. Both expose CO2 and VOC data you can use in automations. The Airthings one is more stable in our experience.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 165
+    },
+    {
+      "text": "amma's fall sensor sent a false alarm at 3am again \u2014 turned out she was just doing her prayers early. need to set a prayer-time exclusion window, can i do that?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 161
+    },
+    {
+      "text": "Absolutely \u2014 in the Care settings for that sensor you can define 'quiet windows' where fall alerts are suppressed. Set 3am-4am as a quiet window and alerts won't fire during that period. You'll still get a log entry so nothing is missed.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 161
+    },
+    {
+      "text": "perfect, done. she would be mortified if she knew the sensor was watching her prayers",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 160
+    },
+    {
+      "text": "had friends over saturday, used the 'dinner party' scene for the first time in months \u2014 it honestly held up really well, the warm bias light in the dining zone was exactly right",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 156
+    },
+    {
+      "text": "whitefield bungalow client approved the lighting scheme today \u2014 they specifically liked seeing the occupancy sim in the BIM model. first time a client has approved lighting in round one, lumio api gets partial credit",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 148
+    },
+    {
+      "text": "That's a huge deal \u2014 congratulations! Round-one approval on lighting is practically unheard of. We'd genuinely love to hear more about that workflow whenever you're ready to share.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 148
+    },
+    {
+      "text": "app dashboard is showing all my co-living devices as offline but partner says the lights are all working fine on site \u2014 is this a sync issue on your end?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 141
+    },
+    {
+      "text": "We're seeing elevated dashboard latency on our status page right now \u2014 device states are correct but the UI is pulling stale cache. Should resolve within the hour, your automations are running fine in the background.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 141
+    },
+    {
+      "text": "ok good, i nearly had a heart attack. please add a banner to the app when this happens so i dont assume something is actually broken",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 141
+    }
+  ],
+  "semantic": [
+    {
+      "text": "Priya is a residential architect based in Bengaluru, India, in her late thirties.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 900
+    },
+    {
+      "text": "Priya lives in a duplex in the Indiranagar neighbourhood with her partner and a dog named Clio.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 900
+    },
+    {
+      "text": "Priya uses the Lumio developer API and considers herself a power user of the platform.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 870
+    },
+    {
+      "text": "Priya integrated Lumio with Autodesk Revit BIM software to prototype lighting layouts for client projects.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 850
+    },
+    {
+      "text": "Priya created a large number of named Lumio scenes early in her usage, leading to scene sprawl she later had to reorganise.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 820
+    },
+    {
+      "text": "Priya noticed that Lumio motion sensors in her duplex gave erratic readings during the Bengaluru monsoon season due to high ambient humidity.",
+      "fact_type": "constraint",
+      "confidence": 0.88,
+      "days_ago": 790
+    },
+    {
+      "text": "High indoor humidity during monsoon months in Bengaluru can degrade the reliability of certain smart-home sensors.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 790
+    },
+    {
+      "text": "Priya uses a home inverter system to keep Lumio devices online during the frequent power cuts that occur during monsoon season.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 760
+    },
+    {
+      "text": "Power cuts during the monsoon season are a recurring infrastructure challenge in many Bengaluru residential areas.",
+      "fact_type": "world",
+      "confidence": 0.97,
+      "days_ago": 760
+    },
+    {
+      "text": "Priya has an elderly mother who lives in a separate flat across town in Bengaluru.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 750
+    },
+    {
+      "text": "Priya installed Lumio-integrated fall-detection sensors at her mother's flat to monitor her safety remotely.",
+      "fact_type": "preference",
+      "confidence": 0.93,
+      "days_ago": 720
+    },
+    {
+      "text": "Priya configured Lumio automations to send her an alert if her mother's flat shows no activity movement within an unusually long window.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 710
+    },
+    {
+      "text": "Priya built a dedicated Lumio scene for her partner called 'Reading Nook' that dims warm-white lights to a fixed low level in the living area.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 700
+    },
+    {
+      "text": "Priya created a Lumio scene called 'Clio Walk' that triggers bright cool lighting in the entryway and staircase on a morning schedule.",
+      "fact_type": "preference",
+      "confidence": 0.82,
+      "days_ago": 690
+    },
+    {
+      "text": "Priya was working on the lighting design for a private residential bungalow project where she used Lumio API data to validate lux levels against client briefs.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 670
+    },
+    {
+      "text": "Priya used her Revit-to-Lumio integration during the bungalow project to simulate daylight supplementation scenarios before specifying fixtures.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 650
+    },
+    {
+      "text": "Priya was involved in a co-living space retrofit project in Bengaluru where she piloted Lumio shared-zone controls for common areas.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 600
+    },
+    {
+      "text": "In the co-living retrofit, Priya found that shared Lumio zones required stricter permission scoping via the API to prevent residents overriding common-area scenes.",
+      "fact_type": "constraint",
+      "confidence": 0.87,
+      "days_ago": 580
+    },
+    {
+      "text": "Priya prefers to script Lumio automations in Python using the developer API rather than using the standard mobile app interface.",
+      "fact_type": "preference",
+      "confidence": 0.93,
+      "days_ago": 560
+    },
+    {
+      "text": "Priya gave a talk at an architecture and technology conference where she cited Lumio as an example of API-first smart lighting integration.",
+      "fact_type": "identity",
+      "confidence": 0.92,
+      "days_ago": 520
+    },
+    {
+      "text": "Priya mentioned during a conference presentation that humidity-proofing sensor placement is critical for smart-home reliability in tropical climates.",
+      "fact_type": "world",
+      "confidence": 0.9,
+      "days_ago": 510
+    },
+    {
+      "text": "Priya reorganised her Lumio scene library by introducing a naming convention with prefixes such as 'Work', 'Home', and 'Care' to reduce clutter.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 480
+    },
+    {
+      "text": "Priya set up a Lumio webhook to log all lighting events from her mother's flat to a private dashboard she built herself.",
+      "fact_type": "preference",
+      "confidence": 0.87,
+      "days_ago": 450
+    },
+    {
+      "text": "Priya has a strong preference for warm colour temperatures (around 2700K) in living and sleeping areas of her duplex.",
+      "fact_type": "preference",
+      "confidence": 0.91,
+      "days_ago": 420
+    },
+    {
+      "text": "Priya uses a cooler colour temperature (around 5000K) in her home studio workspace to maintain alertness during long design sessions.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 400
+    },
+    {
+      "text": "Priya spoke at a second industry event and demonstrated a live Lumio API call during her presentation to an audience of architects and developers.",
+      "fact_type": "identity",
+      "confidence": 0.88,
+      "days_ago": 350
+    },
+    {
+      "text": "Priya expressed frustration that Lumio's API rate limits constrain the polling frequency she needs for real-time BIM simulation feedback.",
+      "fact_type": "constraint",
+      "confidence": 0.86,
+      "days_ago": 300
+    },
+    {
+      "text": "Priya configured a monsoon-season automation profile that automatically increases Lumio light levels during daytime to compensate for heavy overcast skies.",
+      "fact_type": "preference",
+      "confidence": 0.89,
+      "days_ago": 200
+    },
+    {
+      "text": "Priya's dog Clio is an indie dog, a common mixed-breed type found across India, sometimes called an INDog or Pye-dog.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 150
+    },
+    {
+      "text": "Priya is currently exploring using Lumio occupancy data as passive evidence of her mother's daily routine to share summarised wellbeing reports with her family.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 30
+    },
+    {
+      "text": "Priya is a residential architect based in Bengaluru, India, in her late thirties.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 900
+    },
+    {
+      "text": "Priya lives in a duplex in Indiranagar with her partner and a dog named Clio.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 900
+    },
+    {
+      "text": "Priya is a power user of the Lumio developer API and builds custom integrations.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 870
+    },
+    {
+      "text": "Priya integrated Lumio with Revit BIM software to prototype lighting scenarios for client presentations.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 860
+    },
+    {
+      "text": "Priya began her Lumio journey with experimental API calls to automate morning and evening light transitions in the duplex.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 855
+    },
+    {
+      "text": "Priya created dedicated Lumio scenes for working from home, client video calls, and late-night drafting sessions.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 820
+    },
+    {
+      "text": "Priya accumulated a large number of named Lumio scenes over time, leading to scene-management overhead she later wanted to reduce.",
+      "fact_type": "constraint",
+      "confidence": 0.88,
+      "days_ago": 800
+    },
+    {
+      "text": "Bengaluru experiences heavy monsoon humidity each year that can affect smart-home device reliability.",
+      "fact_type": "world",
+      "confidence": 0.97,
+      "days_ago": 780
+    },
+    {
+      "text": "Priya observed that high monsoon humidity caused occasional Lumio connectivity drops and logged the behavior through the API for debugging.",
+      "fact_type": "constraint",
+      "confidence": 0.85,
+      "days_ago": 760
+    },
+    {
+      "text": "Priya's duplex is supported by a home inverter that maintains power during frequent monsoon-season grid cuts.",
+      "fact_type": "constraint",
+      "confidence": 0.93,
+      "days_ago": 750
+    },
+    {
+      "text": "Priya configured Lumio to trigger a low-power scene automatically when the inverter signals a grid outage, preserving battery runtime.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 740
+    },
+    {
+      "text": "Priya cares for her elderly mother who lives in a separate flat across Bengaluru.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 720
+    },
+    {
+      "text": "Priya installed Lumio-connected devices at her mother's flat to monitor ambient conditions remotely.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 700
+    },
+    {
+      "text": "Priya added fall-detection hardware integrated with Lumio at her mother's flat to trigger alert lighting and notifications if a fall is sensed.",
+      "fact_type": "preference",
+      "confidence": 0.93,
+      "days_ago": 680
+    },
+    {
+      "text": "Priya prefers that her mother's flat maintain a consistently warm, high-contrast lighting baseline to aid visibility for an elderly occupant.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 670
+    },
+    {
+      "text": "Priya worked on a residential bungalow project in Bengaluru and used Lumio API sandbox environments to demo lighting moods to the client.",
+      "fact_type": "identity",
+      "confidence": 0.88,
+      "days_ago": 650
+    },
+    {
+      "text": "Priya values being able to export Lumio scene data programmatically so she can version-control lighting designs alongside architectural drawings.",
+      "fact_type": "preference",
+      "confidence": 0.91,
+      "days_ago": 630
+    },
+    {
+      "text": "Priya worked on a co-living space retrofit project and designed zoned Lumio lighting to support diverse resident schedules and privacy needs.",
+      "fact_type": "identity",
+      "confidence": 0.87,
+      "days_ago": 600
+    },
+    {
+      "text": "Priya prefers circadian-rhythm-aligned lighting schedules and implements them via custom API cron jobs rather than built-in app timers.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 580
+    },
+    {
+      "text": "India's residential electricity grid is subject to load-shedding and voltage fluctuations, making inverter backup common in urban homes.",
+      "fact_type": "world",
+      "confidence": 0.96,
+      "days_ago": 560
+    },
+    {
+      "text": "Priya gave a talk at an architecture and technology conference where she cited Lumio as a prototyping tool in her residential design workflow.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 540
+    },
+    {
+      "text": "Priya demonstrated live API-driven Lumio scene switching during a conference presentation to illustrate adaptive lighting design.",
+      "fact_type": "identity",
+      "confidence": 0.87,
+      "days_ago": 535
+    },
+    {
+      "text": "Priya dislikes notification noise from smart-home apps and routes all Lumio alerts through a single custom webhook she controls.",
+      "fact_type": "preference",
+      "confidence": 0.89,
+      "days_ago": 500
+    },
+    {
+      "text": "Priya has a Lumio scene named 'Clio Walk' that activates pathway lighting in the duplex during early-morning and late-evening dog walks.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 460
+    },
+    {
+      "text": "Priya expressed a desire for Lumio to expose occupancy-sensor data via the API so she can feed it into her BIM energy models.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 420
+    },
+    {
+      "text": "Priya mentioned Lumio in a second conference talk focused on human-centric lighting in affordable co-living developments.",
+      "fact_type": "identity",
+      "confidence": 0.86,
+      "days_ago": 380
+    },
+    {
+      "text": "Priya periodically audits and consolidates her Lumio scenes to keep the count manageable, preferring parametric scene templates over static presets.",
+      "fact_type": "preference",
+      "confidence": 0.87,
+      "days_ago": 340
+    },
+    {
+      "text": "Priya's partner has limited interest in smart-home interfaces, so Priya designs all Lumio automations to be invisible and require no manual input from them.",
+      "fact_type": "constraint",
+      "confidence": 0.88,
+      "days_ago": 280
+    },
+    {
+      "text": "Priya requires that any Lumio API changes maintain backward compatibility because her BIM integration scripts are deeply coupled to existing endpoints.",
+      "fact_type": "constraint",
+      "confidence": 0.93,
+      "days_ago": 200
+    },
+    {
+      "text": "Priya is considered a Lumio developer-community contributor and has shared API integration examples related to architectural lighting workflows publicly.",
+      "fact_type": "identity",
+      "confidence": 0.85,
+      "days_ago": 90
+    }
+  ],
+  "procedural": [
+    {
+      "name": "revit_bim_lumio_api_sync_failure",
+      "trigger_text": "Lumio API not syncing with Revit or BIM integration broken",
+      "description": "Guides the support agent through diagnosing and resolving failures in Priya's Revit BIM to Lumio developer API integration pipeline.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Priya to share the specific error code or message she is seeing in the Lumio API response or Revit plugin console.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall known Lumio API versioning issues and check if her current API key scope includes write permissions for scene and device endpoints.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask Priya to confirm which Lumio API version she is targeting in her Revit integration config and whether she recently updated either the plugin or her API credentials.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Recall the Lumio developer API changelog for any breaking changes in the last 60 days that would affect BIM scene mapping payloads.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 5,
+          "instruction": "If the issue is not resolved after checking versioning and credentials, escalate to the Lumio developer integrations tier-2 team with Priya's API key ID and the error trace she provided.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 14
+    },
+    {
+      "name": "multi_scene_scheduling_conflict",
+      "trigger_text": "Scenes are triggering at wrong times or conflicting with each other",
+      "description": "Handles situations where Priya's extensive scene library in her duplex produces scheduling conflicts, overlapping triggers, or unexpected scene activations.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Priya to identify which specific scenes are conflicting, the expected trigger time or condition, and what is actually happening instead.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall the Lumio scene priority and conflict resolution rules, specifically how simultaneous geofence, time-based, and API-triggered scenes are ranked.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask Priya whether the conflicting scenes were recently edited or if she pushed any new API-defined scenes that may overlap with existing ones in the same zone.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Recall known bugs in Lumio scene scheduler related to scenes defined via API overriding manually created scenes without warning.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 5,
+          "instruction": "Walk Priya through auditing her scene trigger timestamps and zone assignments in the Lumio developer dashboard to identify and remove duplicate or overlapping entries.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 6,
+          "instruction": "If the conflict persists after the audit, escalate to the Lumio scheduling engine team with a full export of her scene config and the conflict log timestamps.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 7
+    },
+    {
+      "name": "remote_caregiver_scene_setup_for_elderly_parent",
+      "trigger_text": "Setting up remote lighting scenes or monitoring for elderly mother at separate location",
+      "description": "Assists Priya in configuring Lumio scenes and API-based remote access so she can monitor and control lighting at her mother's home across Bengaluru for caregiver and safety use cases.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Priya to confirm whether her mother's home already has Lumio devices installed and linked to a separate Lumio account or the same account as her duplex.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall the Lumio multi-home account structure and whether a single API key can be scoped to manage devices across two distinct home locations.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask Priya what specific caregiver scenarios she wants to automate, for example motion-triggered check-in lights, scheduled evening scenes, or remote manual override from her phone or API.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Recall the Lumio occupancy and activity scene templates recommended for elderly care, including gentle wake scenes and inactivity alert integrations.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 5,
+          "instruction": "Guide Priya through assigning her mother's home as a secondary location in the Lumio app and granting herself caregiver-level API access to that location's device group.",
+          "tool": "ask_user"
+        }
+      ],
+      "days_ago": 21
+    },
+    {
+      "name": "lumio_api_rate_limit_or_quota_exceeded",
+      "trigger_text": "API rate limit hit or quota exceeded error when calling Lumio endpoints",
+      "description": "Resolves rate limiting or quota exhaustion issues Priya encounters when making high-frequency API calls as part of her automated architectural workflow or scene scripting.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Priya to share the HTTP status code she is receiving, the endpoint being called, and an approximate count of how many requests she is sending per minute.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall the current Lumio developer API rate limits for residential tier accounts, including per-minute, per-hour, and daily call quotas by endpoint category.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask Priya whether her workflow uses batch calls or individual device commands and whether she has implemented exponential backoff or request queuing in her integration code.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Recall whether Lumio offers a bulk scene update endpoint or webhook-based push model that would reduce her outbound API call volume significantly.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 5,
+          "instruction": "If Priya's legitimate use case requires a higher quota than the residential tier allows, escalate to the Lumio developer accounts team to evaluate upgrading her API plan to a professional or commercial tier.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 3
+    }
+  ]
+}

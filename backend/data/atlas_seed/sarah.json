@@ -1,0 +1,1777 @@
+{
+  "user_id": "sarah",
+  "episodic": [
+    {
+      "text": "hi just got my lumio hub v2 delivered, trying to figure out where to even start lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 538
+    },
+    {
+      "text": "Welcome to Lumio, Sarah! Congrats on the new hub. The quickest way to get going is to download the Lumio app and tap the + in the top right to start pairing. What devices did you get with it?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 538
+    },
+    {
+      "text": "i've got like 6 smart bulbs, 2 motion sensors and the doorbell camera thing. flat is a victorian conversion so the wiring is a bit weird in places",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 538
+    },
+    {
+      "text": "Hub v2 powered on and connected to home network. Zigbee radio initialised. 0 devices paired.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 537
+    },
+    {
+      "text": "ok got the hub online! pairing the bulbs now. first one worked straight away, second one is just blinking at me",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 537
+    },
+    {
+      "text": "The fast-blink usually means it's stuck in a previous pairing state. Try the 5-on-5-off reset: switch it on and off five times quickly, it should do a slow pulse to confirm factory reset, then try pairing again.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 537
+    },
+    {
+      "text": "that worked!! ok this is actually quite satisfying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 537
+    },
+    {
+      "text": "6 bulbs paired successfully. 2 motion sensors paired. Doorbell camera setup pending.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 536
+    },
+    {
+      "text": "doorbell is being a nightmare. keeps saying device not found. i'm literally standing next to the hub",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 536
+    },
+    {
+      "text": "The doorbell uses WiFi rather than Zigbee so it needs to be on your 2.4 GHz band, not 5 GHz. If your router broadcasts both on the same SSID that can cause issues. Does your router have separate bands you can connect to?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 536
+    },
+    {
+      "text": "oh!! yes it does. switched to the 2.4 one and it found it immediately. why is that not in the instructions",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 536
+    },
+    {
+      "text": "Totally fair point, sorry about that. We're actually updating the quick-start guide to make that clearer. Glad it's working though!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 536
+    },
+    {
+      "text": "set up my first automation today - porch light comes on when the motion sensor detects movement after sunset. feels like living in the future honestly",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 533
+    },
+    {
+      "text": "Love that! The sunset trigger is one of my favourite features too. You can fine-tune the offset if you want it to kick in say 30 mins before actual sunset \u2014 useful in winter when it gets dark really fast.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 533
+    },
+    {
+      "text": "ooh didn't know about the offset thing, will have a play. also whiskey keeps setting off the motion sensor inside which is funny but annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 533
+    },
+    {
+      "text": "Ha! Classic. You can raise the sensitivity threshold in the sensor settings \u2014 there's a pet mode toggle that basically ignores movement below a certain height. Should sort out Whiskey-triggered events.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 533
+    },
+    {
+      "text": "Motion sensor hallway: sensitivity adjusted to pet mode. Trigger events reduced from 34/day to 3/day.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 532
+    },
+    {
+      "text": "pet mode is a game changer, thank you. although now i feel bad that whiskey can no longer command the lights with her presence",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 532
+    },
+    {
+      "text": "question - can i create like a 'morning' scene that sets different brightness levels in different rooms at once?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 529
+    },
+    {
+      "text": "Yes absolutely \u2014 go to Scenes, hit Create, then you can add multiple lights and set each one individually (brightness, colour temp, whatever). Then you can trigger the whole scene with one tap or attach it to a schedule or automation.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 529
+    },
+    {
+      "text": "made a morning scene and an evening one. the kitchen does this warm amber thing in the evenings now and honestly it's transformed the vibe in here. my partner tom is obsessed",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 527
+    },
+    {
+      "text": "Scene 'Evening Kitchen' activated 6 times in first 3 days.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 524
+    },
+    {
+      "text": "hey quick billing question - i signed up for the lumio plus plan but i can't see it reflected in my account page, still shows free tier",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 522
+    },
+    {
+      "text": "Sorry about the confusion! Sometimes there's a short delay after payment before the account page updates. I can see on our end that your Plus subscription is active as of two days ago. Try logging out and back in \u2014 that usually refreshes it.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 522
+    },
+    {
+      "text": "yep that fixed it, can see plus now. also noticed i get more automation slots which is dangerous because now i want to automate everything",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 522
+    },
+    {
+      "text": "the doorbell sent me a notification at 3am because a fox walked past. is there a way to set quiet hours for notifications?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 519
+    },
+    {
+      "text": "Yes! In the doorbell settings there's a Notification Schedule option. You can set a do-not-disturb window and it'll suppress push notifications during those hours (the recordings still happen, you just won't be woken up).",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 519
+    },
+    {
+      "text": "perfect. bristol foxes are bold as anything, i swear they know they're setting it off",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 519
+    },
+    {
+      "text": "we're going to my parents in Bath for the weekend, is there anything i should do with the hub before i leave? like a holiday mode or something",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 515
+    },
+    {
+      "text": "There's a Presence Simulation mode under Settings > Away Mode \u2014 it uses your historical lighting patterns to randomly vary lights while you're out. Makes the place look occupied. Motion sensor alerts will still come through as normal too.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 515
+    },
+    {
+      "text": "Away mode activated. Presence simulation running on 4 bulbs.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 514
+    },
+    {
+      "text": "back from bath, had a lovely weekend. checked the doorbell app a few times and everything looked fine at home. presence sim is reassuring actually",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 512
+    },
+    {
+      "text": "Glad the weekend went well! And good to hear presence sim gave some peace of mind \u2014 that's exactly what it's for.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 512
+    },
+    {
+      "text": "random one but the app crashed on me this morning when i tried to open the device list. ios 18, iphone 15. just black screen then back to home",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 508
+    },
+    {
+      "text": "Ugh, sorry about that. There's a known issue with the current app build on iOS 18 where a large device list can cause a memory crash on launch. Fix is coming in the next app update. Workaround for now: force-close the app, go to Settings > Lumio > clear cache, then reopen.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 508
+    },
+    {
+      "text": "App crash reported: iOS 18, device list view. Ticket #LM-44821 opened.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 508
+    },
+    {
+      "text": "cache clear worked, thanks. also while i'm here - is it possible to rename rooms? i called one 'room 3' when setting up and it's been bugging me ever since",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 508
+    },
+    {
+      "text": "Ha yes! Go to Rooms, long-press on the room name and you'll get an edit option. You can rename and even change the icon.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 508
+    },
+    {
+      "text": "excellent. it is now called 'the snug' as god intended",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 508
+    },
+    {
+      "text": "been experimenting with colour bulbs in the living room. set them to go a very gentle blue in the evenings which apparently helps wind down before sleep. placebo or not i do feel sleepier lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 503
+    },
+    {
+      "text": "Not a placebo at all! Cooler colour temps do genuinely reduce blue light stimulation... wait, actually warmer/amber reduces blue light. Cool blues are more alerting. You might want to flip that \u2014 warm amber or 2700K for wind-down.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 503
+    },
+    {
+      "text": "hahaha ok so i've been doing it completely backwards. switching to amber now. thanks for the science lesson",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 503
+    },
+    {
+      "text": "Living room evening scene updated to 2700K warm white, 40% brightness.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 502
+    },
+    {
+      "text": "the hub seems to be offline this morning? app says cannot connect to hub. router is fine, everything else on wifi works",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 498
+    },
+    {
+      "text": "Sorry to hear that! First thing to try is a soft reboot \u2014 unplug the hub for 10 seconds and plug back in. If it's still showing offline after 2 minutes let me know and we'll dig deeper.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 498
+    },
+    {
+      "text": "reboot sorted it. do you know why it might have gone offline in the first place?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 498
+    },
+    {
+      "text": "Possibly a brief DHCP lease issue where your router assigned a new IP and the hub lost its connection momentarily. Worth setting a static/reserved IP for the hub in your router settings \u2014 that usually stops it happening again.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 498
+    },
+    {
+      "text": "ok i set a reserved ip in the router. had to google what that meant but got there in the end",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 497
+    },
+    {
+      "text": "Hub connectivity stable. Static IP reservation confirmed on local network.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 496
+    },
+    {
+      "text": "small win: automated the kettle corner light in the kitchen to turn on at 7am on weekdays. tom literally cheered",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 492
+    },
+    {
+      "text": "That's the dream honestly. Nothing like a light that just knows it's coffee time.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 492
+    },
+    {
+      "text": "ha yes. oh also - is there a way to see a log of what automations have triggered? curious whether my evening scene is actually running every day or if i keep manually doing it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 492
+    },
+    {
+      "text": "Yes \u2014 go to Settings > Activity Log and you can filter by automation or device. It shows you exactly what triggered, when, and whether it succeeded. Really useful for debugging too.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 492
+    },
+    {
+      "text": "checked the log - evening scene has run 19 out of 23 days. the 4 misses were when we were out. so it IS working i've just been standing in a nicely lit room not noticing lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 491
+    },
+    {
+      "text": "hey so i set up the motion sensor in the hallway finally and it keeps triggering even when nobodys there?? whiskey is in the garden so its not him",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 404
+    },
+    {
+      "text": "Hi Sarah! That sounds like a sensitivity issue. Can you check the sensitivity slider in the device settings? Try dropping it from high to medium and see if that helps.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 404
+    },
+    {
+      "text": "oh theres a slider, i completely missed that. dropped it to medium cheers",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 404
+    },
+    {
+      "text": "Motion sensor hallway - sensitivity adjusted by user, false triggers reported prior.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 403
+    },
+    {
+      "text": "okay the hallway thing is mostly sorted but now im wondering - can i make the porch light come on only after sunset? like not during the day even if motion is detected",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 401
+    },
+    {
+      "text": "Yes absolutely! In the automation editor, add a condition block - select Time of Day and set it to After Sunset. The hub uses your location to calculate that automatically.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 401
+    },
+    {
+      "text": "that is genuinely clever actually. love that. sorted it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 401
+    },
+    {
+      "text": "good news btw - we are expecting!! very early days but so excited. going to need to set up a nursery at some point which means moving some stuff around",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 398
+    },
+    {
+      "text": "Congratulations Sarah, that is wonderful news!! When the time comes we can absolutely help you plan a nursery setup - quiet hours, dim lighting scenes, the works. So happy for you both!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 398
+    },
+    {
+      "text": "quick question - our kitchen bulbs keep going slightly warm white when we use the 'morning' scene but i set them to cool. is there a default overriding it?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 395
+    },
+    {
+      "text": "There might be. Check if Adaptive Lighting is enabled under that scene - it can gently shift colour temperature based on time of day. Turning it off should lock the colour you set.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 395
+    },
+    {
+      "text": "YES that was it. adaptive lighting was on and i had no idea. turned it off and its perfect now",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 395
+    },
+    {
+      "text": "User resolved kitchen scene colour temp issue - adaptive lighting feature undiscovered. Possible onboarding gap.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 394
+    },
+    {
+      "text": "bit of a random one - we had a power cut last night for like 2 hours. hub came back fine but two of the bulbs in the living room are just showing offline. tried the app refresh nothing",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 391
+    },
+    {
+      "text": "Ah power cuts can sometimes knock bulbs off the Zigbee mesh. Try turning those two bulbs off at the wall switch for 10 seconds and back on - that usually gets them re-pairing.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 391
+    },
+    {
+      "text": "tried that, one came back immediately, the other one is still being stubborn",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 391
+    },
+    {
+      "text": "For the stubborn one, go to Devices > select it > and hit Remove and Re-add. Should only take a minute to re-pair.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 391
+    },
+    {
+      "text": "done! both back online. thank you",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 390
+    },
+    {
+      "text": "we went to visit my mum in Edinburgh for the weekend and i used the away mode for the first time. came back to the house totally fine, porch light had come on automatically Friday evening which was lovely actually",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 387
+    },
+    {
+      "text": "That is so good to hear! Away mode with the scheduled porch light is one of those things that just makes coming home feel nice. Glad it worked well for your trip!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 387
+    },
+    {
+      "text": "the doorbell app notification on my phone has started being really delayed. like someone rings it and i get the alert like 40 seconds later. only started this week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 384
+    },
+    {
+      "text": "That delay sounds frustrating. Can I ask - are you on Android or iOS? And has anything changed with your phone settings recently, like battery optimisation?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 384
+    },
+    {
+      "text": "android. and oh god yes i put battery saver on last week because my phone was dying fast. that might be it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 384
+    },
+    {
+      "text": "That will definitely do it! Battery saver throttles background app activity. You can either turn it off or go into App Settings for Lumio and exempt it from battery optimisation. Second option is better long term.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 384
+    },
+    {
+      "text": "exempted it, notifications are instant again. i feel a bit silly for not figuring that out myself",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 383
+    },
+    {
+      "text": "Doorbell notification delay resolved - Android battery optimisation conflict. Common issue, worth adding to FAQ.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 383
+    },
+    {
+      "text": "okay so we are starting to think about the nursery. the room is the small one at the back. i want a scene that is basically just a very very dim warm glow for night feeds. is that doable",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 379
+    },
+    {
+      "text": "Completely doable! Create a new scene, set the bulb to warm white (around 2700K) and brightness to about 5-8%. Name it something like Night Feed so it is easy to find half asleep at 3am!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 379
+    },
+    {
+      "text": "haha half asleep at 3am is exactly right. also can i trigger it without my phone? like with a physical tap or something",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 379
+    },
+    {
+      "text": "Yes! The Lumio Mini Switch pairs as a Zigbee button - you can stick it to the wall by the nursing chair and assign the Night Feed scene to a single press. Really handy with one hand occupied.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 379
+    },
+    {
+      "text": "oh i am absolutely buying one of those. brilliant",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 379
+    },
+    {
+      "text": "mini switch order likely incoming - nursery setup beginning. Flag for post-purchase onboarding flow if purchased.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 378
+    },
+    {
+      "text": "the app update that came through this morning has totally changed the home screen layout and i cannot find the rooms view. where did it go",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 374
+    },
+    {
+      "text": "Hi Sarah! Yes the latest update moved Rooms into the bottom nav bar - it is the little grid icon on the right. We know a few people have been confused by this, sorry for the disruption!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 374
+    },
+    {
+      "text": "found it! honestly though why move it, the old spot was fine lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 374
+    },
+    {
+      "text": "Totally fair feedback and you are not alone in saying that! I will log it as a navigation UX comment for the product team.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 373
+    },
+    {
+      "text": "random but whiskey kept setting off the kitchen motion sensor while we were at work today. the lights were going on and off all afternoon. is there a dog-height ignore mode or something haha",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 370
+    },
+    {
+      "text": "Ha! Not a specific dog mode unfortunately but you can raise the mounting height of the sensor a bit and angle it slightly upward - that way it catches human movement but misses floor-level activity. A lot of pet owners do this!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 370
+    },
+    {
+      "text": "he is a border collie so he is not exactly tiny but i'll try raising it a bit and see. he is judging me from across the room as i type this",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 370
+    },
+    {
+      "text": "just to check - my monthly bill went up a few quid this month, is there a price change? i dont think i added any devices",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 366
+    },
+    {
+      "text": "Let me check your account. It looks like your annual subscription renewed at the updated rate - we did send an email about the pricing adjustment back in the autumn. I can send you a breakdown if that helps?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 366
+    },
+    {
+      "text": "oh i probably missed that email, yeah a breakdown would be great thanks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 366
+    },
+    {
+      "text": "Sent to your registered email! And just to note, your plan includes the full Zigbee device limit increase we rolled out recently, so you are covered for adding nursery devices without hitting any cap.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 366
+    },
+    {
+      "text": "oh handy to know, thanks. we are definitely going to be adding a few more things in the next couple of months",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 365
+    },
+    {
+      "text": "the mini switch arrived!! paired it in about 3 minutes, assigned the night feed scene, tested it about fifteen times because i am pleased with myself",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 361
+    },
+    {
+      "text": "Love this energy! Glad it paired easily. You are all set for those middle-of-the-night moments. How is the nursery setup going overall?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 361
+    },
+    {
+      "text": "slowly but surely! partner is painting it this weekend. we found out its a boy btw so very exciting",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 361
+    },
+    {
+      "text": "Oh congratulations!! A little boy, how exciting! Sounds like a lovely weekend ahead.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 361
+    },
+    {
+      "text": "we had my partner's family over for sunday lunch and someone accidentally factory reset the hub by holding the button too long. the whole afternoon was chaos lol. anything i should have backed up beforehand",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 356
+    },
+    {
+      "text": "Oh no! That button does need a firm long press which is easy to do accidentally. Your automations and scenes should restore from the cloud backup automatically when you log back in - how is it looking now?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 356
+    },
+    {
+      "text": "most things came back but the nursery scene and the mini switch assignment were gone. had to redo those. is there any way to protect against accidental resets",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 356
+    },
+    {
+      "text": "That is really annoying, sorry. You can enable Button Lock in Hub Settings which disables the physical reset button entirely - still resettable through the app if ever needed. Definitely recommend turning that on!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 355
+    },
+    {
+      "text": "button lock is now ON. lesson learned the hard way",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 355
+    },
+    {
+      "text": "User enabled Hub button lock after accidental family reset. Cloud backup restored most config but Zigbee button assignments not recovered. Known gap in backup scope.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 354
+    },
+    {
+      "text": "hi there, the kitchen bulbs keep dropping off around 2am every night. like clockwork. is this a known thing?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 268
+    },
+    {
+      "text": "Hi Sarah! We have had a few reports of scheduled disconnects overnight. Can you tell me which bulbs and roughly how long they have been doing this?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 268
+    },
+    {
+      "text": "theyre the lumio color e27s, been doing it maybe 4 or 5 nights now. they come back on their own by morning but its annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 267
+    },
+    {
+      "text": "Hub health check completed. Zigbee channel utilisation elevated at 87%. Three devices showing intermittent poll failures overnight.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 267
+    },
+    {
+      "text": "ok so not just me then. also completely unrelated but do you have a way to set the porch light to turn on dimmer after 10pm? baby is nearly here and i dont want it blasting through the hall at night feeds",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 265
+    },
+    {
+      "text": "Yes absolutely! You can set a brightness schedule per bulb under Automations > Time-based. Set a second trigger at 22:00 to drop brightness to say 20%. Want me to walk you through it?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 265
+    },
+    {
+      "text": "yes please, i always get lost after the automations tab",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 265
+    },
+    {
+      "text": "once i added the 10pm rule the porch light is SO much better. thanks for that. now i just need the rest of the house to cooperate lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 262
+    },
+    {
+      "text": "Glad it helped! Any other tweaks you need before the baby arrives?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 262
+    },
+    {
+      "text": "actually yes - can i create a whole nursery scene? like very warm white at 5% for night feeds, and then a brighter one for daytime naps or whatever",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 261
+    },
+    {
+      "text": "Definitely. In the Scenes section you can create as many as you like per room. I would suggest naming them something memorable like Nursery Night and Nursery Day so they are easy to tap in a hurry.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 261
+    },
+    {
+      "text": "genius. doing it now. also whiskey keeps triggering the hallway motion sensor when he wanders at night, any way to set a pet sensitivity mode?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 259
+    },
+    {
+      "text": "The MS-200 sensor has a sensitivity dial on the back - turn it to the lowest setting and it should ignore anything under about 25kg. Might need a bit of trial and error with a big collie though!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 259
+    },
+    {
+      "text": "haha yes whiskey is solidly 28kg so we will see. worth a try",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 259
+    },
+    {
+      "text": "Sensor sensitivity adjusted on hallway MS-200. Motion events reduced from 14 per night to 3.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 257
+    },
+    {
+      "text": "baby theo arrived yesterday!! totally exhausted but wanted to update you lot since you helped set up the nursery scenes. they worked perfectly at 3am i could have cried",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 253
+    },
+    {
+      "text": "Congratulations Sarah and family!! So happy Theo is here and that the nursery scenes came in useful. Get some rest when you can!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 253
+    },
+    {
+      "text": "quick question between feeds - the lumio app wont let me add a second phone to the account. my partner wants to control things too and i cant figure out how to invite them",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 249
+    },
+    {
+      "text": "You can invite them via Settings > Household > Invite Member. They will get an email link. They need to have the app installed first. Let me know if the invite bounces.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 249
+    },
+    {
+      "text": "it worked! he can now turn the nursery light off from his phone when he sneaks out at 3am. honestly a game changer",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 248
+    },
+    {
+      "text": "the kitchen bulbs have started dropping again. thought it was fixed after the channel thing but its back. last night 1:47am, tonight already gone at 2:03am",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 244
+    },
+    {
+      "text": "Sorry to hear that Sarah. Can you check the Hub LED colour for me? And is the hub near any other wireless devices like a baby monitor or router?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 244
+    },
+    {
+      "text": "oh. OH. the new baby monitor is literally 30cm from the hub. could that be it?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 244
+    },
+    {
+      "text": "Very likely yes! Baby monitors often use 2.4GHz and can interfere. Try moving the hub at least a metre away and see if that helps tonight.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 244
+    },
+    {
+      "text": "moved the hub to the other side of the kitchen shelf. will report back. also can i ask a billing thing while im here - i got charged twice this month for the lumio care plan?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 243
+    },
+    {
+      "text": "Sorry about that! I can see a duplicate transaction on your account dated this billing cycle. I have raised a refund for the duplicate charge - should be back in your account within 5 working days.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 243
+    },
+    {
+      "text": "thank you. zero energy for chasing bank stuff right now with a newborn so i really appreciate that",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 243
+    },
+    {
+      "text": "no dropoffs last night!! moved hub definitely helped. you legend",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 242
+    },
+    {
+      "text": "Hub uptime 99.4% over last 48 hours. No overnight Zigbee disconnects recorded.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 241
+    },
+    {
+      "text": "random one but i want to set up a do not disturb mode for the doorbell during theo's nap times. is that possible? the postman keeps ringing at 1pm and waking him up",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 238
+    },
+    {
+      "text": "Yes! In the doorbell settings go to Notifications > Quiet Hours and set a window. The chime will still log the ring but wont alert your phones or trigger any sounds. You can also add a custom message to the doorbell screen if you have the DB-Pro.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 238
+    },
+    {
+      "text": "i have the db-pro yes! adding a message now. putting BABY SLEEPING PLEASE KNOCK QUIETLY in capitals lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 238
+    },
+    {
+      "text": "hey so we went to my mums in cardiff for the weekend with theo and when we came back the hub had lost 4 of the bedroom bulbs. they just showed as unavailable. had to re-pair them all",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 232
+    },
+    {
+      "text": "That can happen after a longer power cycle if the bulbs lose their mesh position. Not ideal, especially coming home with a tired baby. Going forward you can try enabling Zigbee rejoin persistence in Hub Settings > Advanced - it makes re-pairing much faster.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 232
+    },
+    {
+      "text": "i did not know that setting existed. turning it on now. also the living room automation is running 45 mins late every evening, its supposed to trigger at sunset but its way off",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 230
+    },
+    {
+      "text": "Check that your location is set correctly in Hub Settings > Location. If it hasnt updated since you moved the hub it might be using slightly wrong coordinates for sunset calculations.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 230
+    },
+    {
+      "text": "location was somehow set to somewhere near exeter. fixed it. sunset trigger now bang on, brilliant",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 229
+    },
+    {
+      "text": "my sister is visiting this weekend, she kept asking about the smart bulbs. ended up giving a full lumio tour at 10pm like a tired sleep deprived brand ambassador lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 225
+    },
+    {
+      "text": "Ha! We appreciate the unpaid promotion. Hope you all got some sleep afterwards!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 225
+    },
+    {
+      "text": "the app crashed on me twice today when i tried to open the automations tab. iphone 15, latest ios. just spins and then closes",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 220
+    },
+    {
+      "text": "Thanks for flagging. There is a known crash on the automations tab affecting some iOS users - a patch is in review. Workaround for now: close the app fully, reopen, and navigate to automations without going through the dashboard shortcut.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 220
+    },
+    {
+      "text": "workaround works, thank you. also completely off topic but does anyone at lumio have a sourdough starter recommendation because i am stress baking at nap times and need a hobby that isnt doom scrolling",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 218
+    },
+    {
+      "text": "Ha love that energy! Not officially in our support remit but I personally use a rye flour starter and feed it every 24 hours. Works great. Also you could use a Lumio plug on your oven to preheat automatically if that helps!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 218
+    },
+    {
+      "text": "ok the zigbee stuff is getting really bad this week. not just the kitchen bulbs now - the hallway sensor, the nursery bulb, and one of the bedroom strips all dropping daily. nothing changed at my end",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 211
+    },
+    {
+      "text": "I can see several Zigbee mesh errors on your hub logs from the past 72 hours. This looks wider than an interference issue. Can I remotely pull a full diagnostic report?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 211
+    },
+    {
+      "text": "yes please do whatever you need to",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 211
+    },
+    {
+      "text": "Remote diagnostic completed. Multiple Zigbee end devices showing repeated NLME-JOIN failures. Mesh routing table fragmented. Escalating to Tier 2 engineering team.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 210
+    },
+    {
+      "text": "theo was up 4 times last night and at 4am the nursery light wouldnt respond at all. i had to use my phone torch. i was furious. please sort this out",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 208
+    },
+    {
+      "text": "Sarah I am so sorry. That is genuinely awful especially with a newborn at 4am. I have flagged your case as high priority with engineering. In the meantime can you try a soft reboot of just the hub - hold the button for 5 seconds. I know its not a fix but it may stabilise things tonight.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 208
+    },
+    {
+      "text": "soft reboot helped for about 6 hours then same thing. i have now done it 3 times today. this is not sustainable",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 207
+    },
+    {
+      "text": "Completely understand. Engineering have confirmed they are investigating a Zigbee stack regression affecting Hub v2 units. You are not alone and a fix is being worked on urgently. I want to send you a goodwill credit for the disruption - is that ok?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 207
+    },
+    {
+      "text": "yes fine, appreciate it, but what i really want is for it to just work. theo is 5 weeks old and i set all this up so nights would be easier not harder",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 207
+    },
+    {
+      "text": "ok so the zigbee thing is back. kitchen bulbs just dropped off again overnight. third time this week",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 133
+    },
+    {
+      "text": "Hi Sarah, really sorry to hear that \u2014 I can see this has been happening repeatedly for you. Can you confirm whether the hub lost power at any point, or did it stay on throughout?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 133
+    },
+    {
+      "text": "hub stayed on, green light the whole time. bulbs just vanished from the app. had to go round and manually switch them on for theo's 3am feed which was... not ideal lol",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 133
+    },
+    {
+      "text": "Hub reported Zigbee mesh instability at 02:47. Four devices dropped off network simultaneously. Auto-rejoin failed.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 132
+    },
+    {
+      "text": "whiskey knocked the hub off the shelf again btw so i had to re-seat the aerial. don't know if that's relevant",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 132
+    },
+    {
+      "text": "oh also noticed the doorbell camera feed is really laggy since all this started. like 8-10 second delay. is that related?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 131
+    },
+    {
+      "text": "Yes that lag is almost certainly related \u2014 when the Zigbee layer is struggling it can affect overall hub performance including the camera stream. We're aware of this and the team is actively working on a fix.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 131
+    },
+    {
+      "text": "right. look i've done three factory resets now following your guides. it's fine for a day or two then falls apart again. i'm running on about 4 hours sleep a night with a newborn. i really can't keep doing this",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 130
+    },
+    {
+      "text": "Sarah, I completely understand and I'm so sorry. You shouldn't have to keep doing this, especially right now. I'm escalating your case to our Tier 2 team who can look at your hub logs directly. You'll get a callback \u2014 would morning or afternoon work better for you?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 130
+    },
+    {
+      "text": "morning would be better, theo usually naps around 10. thanks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 130
+    },
+    {
+      "text": "Case escalated to Tier 2. Engineer callback scheduled for 10:00. Hub diagnostic logs pulled remotely.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 129
+    },
+    {
+      "text": "the engineer called, really helpful actually. he thinks it might be interference from the new baby monitor we got. apparently 2.4ghz and zigbee don't play nicely in a small flat",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 128
+    },
+    {
+      "text": "Yes that's a really common one unfortunately \u2014 baby monitors can be quite aggressive on the spectrum. Did he suggest a channel change on the hub?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 128
+    },
+    {
+      "text": "yeah he did it remotely, switched to channel 25. fingers crossed. also he said there's a fix coming soon which would help with reconnection behaviour. anything you can tell me about timeline?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 128
+    },
+    {
+      "text": "I can't give an exact date but our engineering team is targeting very soon \u2014 it's their top priority right now. You'll get an in-app notification when it's ready to install.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 128
+    },
+    {
+      "text": "ok 48 hours since the channel change and everything is still connected!! even survived theo's witching hour at 2am without dropping. small victories",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 126
+    },
+    {
+      "text": "That's brilliant news! Really glad the channel change helped. Keep an eye on it and let us know if anything drops again.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 126
+    },
+    {
+      "text": "random question \u2014 can i set the nursery lamp to a specific colour temp for night feeds? like a really warm amber that won't wake theo up too much. currently just using the dimmer",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 123
+    },
+    {
+      "text": "Absolutely \u2014 if it's a colour-temp bulb you can set it as low as 2200K in the scene editor. Create a scene called something like 'night feed', set the brightness to around 8-10% and colour temp to 2200K, then you can trigger it from the widget on your lock screen so you don't have to fumble with the app at 3am.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 123
+    },
+    {
+      "text": "oh that is a game changer. doing this right now. why did nobody tell me sooner",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 123
+    },
+    {
+      "text": "User created 'Night Feed' scene. Nursery bulb set to 2200K, 9% brightness. Lock screen widget configured.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 122
+    },
+    {
+      "text": "theo is 6 weeks old today. he smiled at the lumio bulb in the nursery this morning which honestly felt like an endorsement",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 119
+    },
+    {
+      "text": "Haha we'll take it! Happy 6-week birthday Theo! How are you all doing?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 119
+    },
+    {
+      "text": "tired but good. my mum's visiting from edinburgh this weekend which will help. she'll also absolutely judge every smart home gadget in the flat but that's fine",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 119
+    },
+    {
+      "text": "woke up this morning and all the zigbee devices were gone again. i thought we'd fixed this",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 115
+    },
+    {
+      "text": "Hub Zigbee mesh dropped at 04:12. 7 devices offline. Channel 25 in use. No interference spike detected. Auto-rejoin attempted, 3 of 7 devices recovered.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 115
+    },
+    {
+      "text": "I'm really sorry Sarah. The logs show this one is different from the baby monitor interference \u2014 it looks like the underlying issue is still present. I know this is incredibly frustrating. The fix that's in progress should address exactly this behaviour. I can add a note to your case to make sure you're prioritised for the update.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 115
+    },
+    {
+      "text": "yes please do that. in the meantime is there literally anything else i can try or do i just keep doing factory resets forever",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 115
+    },
+    {
+      "text": "Please don't do another factory reset \u2014 it won't help with this particular issue and you'll just have to re-pair everything again. What can help: keep the hub at least 1m from other electronics, and if you have any Lumio plug-in devices they act as Zigbee repeaters which can stabilise the mesh. Do you have any of those?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 115
+    },
+    {
+      "text": "i have one smart plug in the hall. didn't realise it was doing anything useful, i basically just used it to turn the lamp on for whiskey when we go out",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 114
+    },
+    {
+      "text": "That plug is doing double duty then! If you have room for one more plug roughly between the hub and the nursery it would help bridge the signal. They're \u00a314.99 on our site at the moment.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 114
+    },
+    {
+      "text": "ordered. also while i have you \u2014 i got an email about my annual subscription renewing. it's gone up \u00a34 a month. is there any goodwill discount given how much trouble i've had lately",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 112
+    },
+    {
+      "text": "That's a completely fair ask given everything you've been through. I can't apply a discount here in chat but I'm flagging your account to our billing team with full notes on your support history. Someone will email you within 2 working days.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 112
+    },
+    {
+      "text": "billing team applied a 3-month courtesy credit of \u00a34/month. Email sent to customer.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 110
+    },
+    {
+      "text": "got the email about the credit, thank you. that was a nice surprise honestly",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 109
+    },
+    {
+      "text": "new smart plug arrived and i've set it up in the bedroom corridor. everything's been connected for 36 hours straight including through last night. theo slept for a 4 hour stretch which might be unrelated but i'm choosing to credit lumio",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 106
+    },
+    {
+      "text": "Ha! We'll absolutely take credit for Theo's sleep. Genuinely though \u2014 great news on the mesh stability. The extra repeater really does make a difference in flats where the distances are small but walls are thick.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 106
+    },
+    {
+      "text": "quick one \u2014 the motion sensor in the hall keeps triggering at about 4am when there's nothing there. whiskey sleeps downstairs so it's not him. ghost?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 101
+    },
+    {
+      "text": "Ha \u2014 almost certainly not a ghost! PIR sensors can be triggered by temperature changes, particularly central heating coming on in the early hours. Does your heating have a scheduled start around that time?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 101
+    },
+    {
+      "text": "...yes it comes on at 4. oh my god. i've been blaming the victorian flat for being haunted for two weeks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 101
+    },
+    {
+      "text": "Bristol Victorian flats do have that energy though! You can reduce the sensor sensitivity in the device settings \u2014 there's a slider under 'Detection > Sensitivity'. Dropping it one notch usually sorts this.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 101
+    },
+    {
+      "text": "it's been almost two weeks of solid uptime on the zigbee mesh. i'd forgotten what reliable felt like. is the update still coming or do i not need it now",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 95
+    },
+    {
+      "text": "Really glad to hear it! The update is still coming and we'd still recommend installing it when available \u2014 it includes proper auto-recovery logic so that if there is ever a drop, devices reconnect within seconds rather than staying offline. Worth having even if things are stable.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 95
+    },
+    {
+      "text": "Hub firmware update available. Update notification pushed to user's app.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 88
+    },
+    {
+      "text": "there's an update available!! is this the one? should i do it now or wait",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 88
+    },
+    {
+      "text": "Yes! This is the one. We'd suggest installing when you don't need the devices for 10-15 minutes \u2014 the hub will reboot during install. Daytime is ideal. We've been testing it extensively and the Zigbee recovery behaviour is completely reworked.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 88
+    },
+    {
+      "text": "ok theo is napping and whiskey is asleep in a patch of sun. installing now. fingers crossed",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 87
+    },
+    {
+      "text": "Firmware update installed successfully. All 9 Zigbee devices reconnected within 45 seconds. Hub reporting nominal.",
+      "role": "assistant",
+      "event_type": "observation",
+      "days_ago": 87
+    },
+    {
+      "text": "it worked. everything came back on its own. i actually teared up a bit which is either sleep deprivation or genuine relief probably both",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 87
+    },
+    {
+      "text": "Honestly that reaction is completely earned after everything you've been through. We're so glad it's working. Give it a few days and let us know how it holds up \u2014 but we're confident this one is solid.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 87
+    },
+    {
+      "text": "one week post-update. zero drops. theo is 10 weeks old, smiling properly now, whiskey has accepted him as part of the pack. lumio hub is behaving. life is cautiously good",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 80
+    }
+  ],
+  "semantic": [
+    {
+      "text": "Sarah lives in a Victorian flat in Bristol, UK.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah shares her home with her partner and their newborn son Theo.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 60
+    },
+    {
+      "text": "Sarah owns a Border Collie named Whiskey.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah owns a Lumio Hub v2 as her primary smart home controller.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 530
+    },
+    {
+      "text": "Sarah has installed multiple Lumio motion sensors throughout her flat.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 520
+    },
+    {
+      "text": "Sarah uses a Lumio smart doorbell at her front entrance.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 510
+    },
+    {
+      "text": "Sarah has Lumio smart bulbs fitted in several rooms of her home.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 510
+    },
+    {
+      "text": "Sarah set up an automation to turn on the porch light based on motion detection shortly after installing her Hub v2.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 500
+    },
+    {
+      "text": "Sarah created a named lighting scene for the kitchen as one of her early smart home automations.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 490
+    },
+    {
+      "text": "Sarah prefers gradual, incremental adoption of smart home features rather than configuring everything at once.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 480
+    },
+    {
+      "text": "Sarah was pregnant during the mid-period of her Lumio ownership and reconfigured her home setup around the nursery.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 300
+    },
+    {
+      "text": "Sarah created a dedicated nursery lighting zone in the Lumio app while preparing for her baby.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 290
+    },
+    {
+      "text": "Sarah configured quiet-hours automations to prevent lights and alerts from triggering during night-time infant sleep windows.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 270
+    },
+    {
+      "text": "Sarah requires smart home alerts and doorbell notifications to be suppressible during defined sleep hours.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 265
+    },
+    {
+      "text": "Sarah contacted Lumio support while sleep-deprived to troubleshoot nursery automation issues.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 250
+    },
+    {
+      "text": "Sarah values low-disruption device behaviour at night above other smart home conveniences.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 240
+    },
+    {
+      "text": "Zigbee is the primary wireless protocol used by Sarah's Lumio devices.",
+      "fact_type": "world",
+      "confidence": 1.0,
+      "days_ago": 530
+    },
+    {
+      "text": "Zigbee mesh networks can be disrupted by firmware regressions on the coordinating hub device.",
+      "fact_type": "world",
+      "confidence": 1.0,
+      "days_ago": 90
+    },
+    {
+      "text": "Factory resetting a Lumio Hub v2 requires re-pairing all connected Zigbee devices from scratch.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 80
+    },
+    {
+      "text": "Sarah experienced repeated Zigbee device disconnections following a hub firmware update.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 100
+    },
+    {
+      "text": "Sarah performed at least one full factory reset of her Lumio Hub v2 in an attempt to resolve connectivity issues.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 90
+    },
+    {
+      "text": "Sarah has had multiple support interactions with Lumio regarding persistent Zigbee disconnection problems.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 85
+    },
+    {
+      "text": "Sarah escalated her connectivity issue beyond first-line support after initial troubleshooting failed to resolve it.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 80
+    },
+    {
+      "text": "Sarah expressed frustration and fatigue in her support communications during the Zigbee regression period.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 75
+    },
+    {
+      "text": "Sarah is awaiting a hub firmware update that is expected to resolve the Zigbee regression she has been experiencing.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 30
+    },
+    {
+      "text": "Sarah's ability to rely on her smart home automations is currently degraded due to unresolved firmware issues.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 30
+    },
+    {
+      "text": "Smart home stability and reliability are high-priority requirements for Sarah given her newborn and sleep schedule.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 60
+    },
+    {
+      "text": "Victorian flats in Bristol may have thick walls that can affect wireless mesh device range and placement.",
+      "fact_type": "world",
+      "confidence": 0.75,
+      "days_ago": 530
+    },
+    {
+      "text": "Sarah's tone in support interactions shifted from enthusiastic and playful early on to tired and transactional over time.",
+      "fact_type": "identity",
+      "confidence": 0.85,
+      "days_ago": 30
+    },
+    {
+      "text": "Sarah is a high-engagement Lumio customer with a history of both self-service troubleshooting and formal support escalations.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 20
+    },
+    {
+      "text": "Sarah lives in a Victorian flat in Bristol, UK.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah shares her home with her partner and their newborn son Theo.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 60
+    },
+    {
+      "text": "Sarah owns a Border Collie named Whiskey.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah owns a Lumio Hub v2 as her primary smart home controller.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah has installed multiple Lumio motion sensors throughout her flat.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 500
+    },
+    {
+      "text": "Sarah uses a Lumio smart doorbell at her flat entrance.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 490
+    },
+    {
+      "text": "Sarah has deployed Lumio smart bulbs in several rooms of her home.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 480
+    },
+    {
+      "text": "Sarah prefers to automate her porch light to turn on when motion is detected after dark.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 480
+    },
+    {
+      "text": "Sarah has set up a dedicated kitchen lighting scene for evening cooking.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 460
+    },
+    {
+      "text": "Sarah finds incremental smart home adoption more comfortable than all-at-once installation.",
+      "fact_type": "preference",
+      "confidence": 0.8,
+      "days_ago": 500
+    },
+    {
+      "text": "Zigbee is the primary wireless protocol used by Sarah's Lumio devices.",
+      "fact_type": "world",
+      "confidence": 1.0,
+      "days_ago": 540
+    },
+    {
+      "text": "Victorian-era flats in Bristol commonly have thick stone or brick walls that can attenuate Zigbee signals.",
+      "fact_type": "world",
+      "confidence": 0.85,
+      "days_ago": 540
+    },
+    {
+      "text": "Sarah was pregnant during the mid-period of her Lumio ownership and prepared a nursery for Theo.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 200
+    },
+    {
+      "text": "Sarah relocated and reconfigured smart devices when setting up the nursery room.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 210
+    },
+    {
+      "text": "Sarah requires a quiet-hours automation that suppresses loud alerts and bright light changes during nighttime hours.",
+      "fact_type": "constraint",
+      "confidence": 1.0,
+      "days_ago": 180
+    },
+    {
+      "text": "Sarah set quiet hours primarily to avoid disturbing Theo's sleep schedule.",
+      "fact_type": "constraint",
+      "confidence": 1.0,
+      "days_ago": 160
+    },
+    {
+      "text": "Sarah prefers nursery lighting automations to use very low brightness levels at night.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 170
+    },
+    {
+      "text": "Sarah wants doorbell notifications to be silent or vibration-only during Theo's nap windows.",
+      "fact_type": "constraint",
+      "confidence": 0.9,
+      "days_ago": 155
+    },
+    {
+      "text": "Sarah has contacted Lumio support multiple times while sleep-deprived, indicating high stress around device reliability.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 90
+    },
+    {
+      "text": "Sarah experienced widespread Zigbee device disconnections following a hub firmware update.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 80
+    },
+    {
+      "text": "Sarah performed at least one full factory reset of her Lumio Hub v2 in an attempt to resolve Zigbee issues.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 75
+    },
+    {
+      "text": "Sarah escalated her Zigbee disconnection issue beyond first-line Lumio support.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 65
+    },
+    {
+      "text": "Sarah's tone in support interactions shifted from friendly and exploratory to tired and frustrated over time.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 70
+    },
+    {
+      "text": "A Lumio hub firmware regression can cause Zigbee mesh devices to drop off the network unpredictably.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 80
+    },
+    {
+      "text": "Factory resetting a Lumio Hub v2 requires re-pairing all connected Zigbee devices from scratch.",
+      "fact_type": "world",
+      "confidence": 0.9,
+      "days_ago": 75
+    },
+    {
+      "text": "Sarah is awaiting a Lumio firmware patch that is expected to resolve the Zigbee regression she experienced.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 30
+    },
+    {
+      "text": "Sarah considers reliable overnight automation critical now that she has a newborn in the home.",
+      "fact_type": "constraint",
+      "confidence": 1.0,
+      "days_ago": 60
+    },
+    {
+      "text": "Sarah prefers to receive proactive status updates from Lumio support rather than having to chase progress herself.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 50
+    },
+    {
+      "text": "Sarah values her smart home setup as a practical household tool rather than a hobbyist project.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 300
+    },
+    {
+      "text": "Whiskey the Border Collie's movement through the flat is a known source of false-positive motion sensor triggers for Sarah.",
+      "fact_type": "constraint",
+      "confidence": 0.8,
+      "days_ago": 400
+    }
+  ],
+  "procedural": [
+    {
+      "name": "zigbee_device_reconnect_post_314",
+      "trigger_text": "motion sensor offline after update OR bulb not responding after firmware 3.1.4",
+      "description": "Step-by-step recovery for Sarah's Zigbee devices that dropped off the mesh following the 3.1.4 regression. Applies to motion sensors and smart bulbs in her Victorian flat where thick walls worsen signal loss.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Sarah which specific device is offline and confirm it was working before the 3.1.4 update rolled out.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall any prior Zigbee channel or mesh notes logged for Sarah's Lumio Hub v2 from previous support sessions.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Instruct Sarah to power-cycle the affected device by removing power for 10 seconds, then guide her to re-pair it via the Lumio app under Settings > Devices > Add Device.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "If re-pairing fails, ask Sarah to check whether her Hub v2 Zigbee channel is set to 15 or 20 and advise switching to channel 25 to avoid 2.4 GHz Wi-Fi overlap common in dense Bristol terraces.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "Confirm the device appears online and stable in the Lumio app for at least 2 minutes before closing the interaction.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 6,
+          "instruction": "If device remains offline after channel change and re-pair, escalate to Tier 2 with full device logs and note the 3.1.4 regression context.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 180
+    },
+    {
+      "name": "smart_doorbell_motion_alert_false_positives",
+      "trigger_text": "doorbell sending too many alerts OR Whiskey keeps triggering the doorbell motion zone",
+      "description": "Handles Sarah's recurring complaint that her border collie Whiskey triggers the smart doorbell motion alerts repeatedly throughout the day, causing notification fatigue for her and her partner during newborn sleep windows.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Confirm with Sarah whether the false positives are coming from the doorbell camera motion zone or from a separate motion sensor near the front door.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall any previously saved motion sensitivity settings or custom zones configured for Sarah's doorbell during past support sessions.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Guide Sarah to open the Lumio app, select her doorbell device, tap Motion Settings, and reduce sensitivity from High to Medium or Low.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Advise Sarah to draw a custom activity zone in the app that excludes the lower third of the camera frame where Whiskey typically moves, keeping focus on the door-height area.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "Suggest enabling the Do Not Disturb schedule in Lumio app notifications to suppress alerts during Theo's nap windows, typically synced to a time block she can define.",
+          "tool": "ask_user"
+        }
+      ],
+      "days_ago": 95
+    },
+    {
+      "name": "lumio_hub_v2_offline_recovery",
+      "trigger_text": "Hub offline OR all smart devices stopped working at once OR Lumio app says hub unreachable",
+      "description": "Recovery playbook for Sarah's Lumio Hub v2 going fully offline, a scenario she has experienced twice since the 3.1.4 update and which affects all her connected devices simultaneously including sensors, bulbs, and doorbell.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Sarah whether the Hub v2 LED status light is off, solid red, or flashing, and whether her home broadband router is functioning normally.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall whether Sarah's Hub v2 has a static IP assignment or DHCP lease noted from previous network troubleshooting sessions.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Instruct Sarah to unplug the Hub v2 from power, wait 30 seconds, and plug back in, then wait up to 90 seconds for the LED to turn solid white before checking the app.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "If the Hub remains unreachable, ask Sarah to log into her router admin panel and confirm the Hub v2 has a valid IP lease, advising her to assign a DHCP reservation to prevent future conflicts.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "If the Hub is online in the router but still unreachable in the Lumio app, instruct Sarah to force-close and relaunch the app, then attempt a cloud re-link via Settings > Hub > Re-link Account.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 6,
+          "instruction": "If the Hub LED is solid red after reboot or the cloud re-link fails, escalate immediately to Tier 2 with Hub serial number and note history of 3.1.4 related instability.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 160
+    },
+    {
+      "name": "new_parent_routine_automation_setup",
+      "trigger_text": "set up automation for baby OR create a night routine OR bulbs not dimming at bedtime automatically",
+      "description": "Helps Sarah configure a Lumio automation routine suited to life with newborn Theo, including dim lighting in the evening, motion-triggered night lights at low brightness, and quiet mode for doorbell alerts during set hours.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask Sarah which rooms and devices she wants included in the routine, confirming which bulb groups and motion sensors are already paired and stable after the 3.1.4 issues.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall any existing automation routines or scenes previously saved under Sarah's Lumio account that could be modified rather than rebuilt from scratch.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Guide Sarah to open the Lumio app, tap Automations > Create Routine, set the trigger to Time of Day at her preferred bedtime, and add an action to dim all bedroom and hallway bulbs to 20 percent with a warm colour temperature around 2700K.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Add a second action within the same routine to set motion sensors in the hallway and nursery to trigger bulbs at 10 percent brightness only, preventing bright lights during night feeds.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "Enable the doorbell Do Not Disturb window within the routine by navigating to Doorbell Settings > Notifications > Schedule and setting quiet hours to match Theo's typical sleep block.",
+          "tool": "ask_user"
+        }
+      ],
+      "days_ago": 60
+    }
+  ]
+}

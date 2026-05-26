@@ -1,0 +1,1130 @@
+{
+  "user_id": "james",
+  "episodic": [
+    {
+      "text": "hoi, just set up my Lumio hub on the barge last week. took me a while to find where to plug it in but its working now i think",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 718
+    },
+    {
+      "text": "Welcome James! Great to hear you got it up and running. Barges can be a bit tricky for placement \u2014 how are the signal levels looking in the app?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 718
+    },
+    {
+      "text": "the app says 2 bars on the bedroom strip light. is that enough? the hull is steel so maybe thats the problem",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 717
+    },
+    {
+      "text": "Hub v1 signal detected at moderate strength on node LX-04 (bedroom strip). Steel hull interference noted in environment profile.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 717
+    },
+    {
+      "text": "2 bars should be fine for basic on/off and dimming. Steel hulls do eat signal a bit. If you start getting dropouts try moving the hub a little closer to the centre of the barge",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 717
+    },
+    {
+      "text": "ok thanks. also the app is in english but id prefer dutch, how do i change that",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 716
+    },
+    {
+      "text": "Go to Settings > App Preferences > Language and pick Nederlands. Should take effect straight away without needing to restart.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 716
+    },
+    {
+      "text": "ah found it, thanks. one more thing \u2014 i connected 3 bulbs in the woonkamer but only 2 show up",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 714
+    },
+    {
+      "text": "Can you try a manual rescan? Pull down on the Devices screen. Sometimes the third bulb just needs a moment, especially if you added them quickly one after another.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 714
+    },
+    {
+      "text": "ja that worked, all 3 there now. gezellig",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 714
+    },
+    {
+      "text": "its getting cold already, typical dutch autumn. set the living room lights to warm white in the evening and its actually really nice on the water",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 703
+    },
+    {
+      "text": "That warm white setting at 2700K is perfect for those dark canal evenings. Glad it is working well for you!",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 703
+    },
+    {
+      "text": "had a shore power cut last night around midnight, maybe 20 minutes. when power came back the hub was blinking orange and two bulbs didnt respond",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 698
+    },
+    {
+      "text": "Hub power cycle detected. Nodes LX-01 and LX-02 failed to re-register after restoration. Automatic re-sync attempted, partial success.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 698
+    },
+    {
+      "text": "Sorry about that, brownouts and sudden cuts can confuse the hub a bit. Try holding the reset button on each bulb for 5 seconds to re-pair them. Shouldnt lose your settings.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 698
+    },
+    {
+      "text": "reset worked. is this going to happen every time the power goes out? we get cuts here maybe once a month at the marina",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 697
+    },
+    {
+      "text": "Hub v1 doesnt have a battery backup unfortunately. Most of the time it recovers cleanly but occasionally a bulb or two needs a nudge. Its a known limitation \u2014 something Hub v2 handles better actually",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 697
+    },
+    {
+      "text": "hmm interesting. how much is the v2",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 697
+    },
+    {
+      "text": "The Hub v2 is \u20ac89 for existing customers. It has better brownout recovery, wider Zigbee range and a few other extras. No pressure though, v1 handles most things just fine.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 696
+    },
+    {
+      "text": "ill think about it. not in a hurry",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 696
+    },
+    {
+      "text": "my daughter Anouk is visiting this weekend. she wants to set the lights to some kind of disco mode for saturday night lol. is there a party scene or something",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 689
+    },
+    {
+      "text": "Ha! Yes, there is a Dynamic Color scene under Scenes > Entertainment. You can set the speed and intensity. Fair warning, on a barge the neighbors might also enjoy the light show through the portholes",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 689
+    },
+    {
+      "text": "haha ja probably. Anouk loved it by the way. she wants her own Lumio now",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 687
+    },
+    {
+      "text": "the app crashed twice this weekend when switching scenes quickly. android phone, fairly new. just freezes and i have to restart it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 687
+    },
+    {
+      "text": "App crash events logged on account \u2014 two rapid scene-switch crashes on Android client version noted. Flagged for mobile team.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 687
+    },
+    {
+      "text": "Thanks for flagging that, its a known issue when flipping scenes too fast on Android. A fix is in the pipeline. For now just give it a second between scene changes and it should be stable.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 687
+    },
+    {
+      "text": "december now, its really dark by 4pm. i made a schedule \u2014 lights come on at 15:45 every day which is great. feels less depressing coming home to a lit barge",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 672
+    },
+    {
+      "text": "That is a great use of schedules. You can also link it to local sunset time in the schedule settings so it adjusts automatically through the season without you changing it.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 672
+    },
+    {
+      "text": "oh i didnt know that. let me try it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 671
+    },
+    {
+      "text": "ja works perfectly! it shifted the time already today. nice feature",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 670
+    },
+    {
+      "text": "got a bill notification \u2014 it says my subscription renews next month. I thought the hub v1 was a one-time purchase, why is there a subscription",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 665
+    },
+    {
+      "text": "Good question. The hub hardware is a one-time purchase, yes. The subscription covers cloud scheduling, remote access and the scene library. The basic plan is what you are on \u2014 \u20ac2.99 a month. You would have seen it at signup but easy to miss.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 665
+    },
+    {
+      "text": "ah okay, i probably clicked past it. not a big deal i suppose. is there a free tier",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 665
+    },
+    {
+      "text": "There is a free tier yes, but it loses remote access and limits you to 3 schedules. Given how you use it I think the basic plan is worth keeping, but your call entirely.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 665
+    },
+    {
+      "text": "okay ill keep it. merry christmas by the way, the barge looks really festive with the warm lights and some candles. very cosy",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 657
+    },
+    {
+      "text": "That sounds wonderful, James. Fijne feestdagen! Enjoy the season on the water.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 657
+    },
+    {
+      "text": "new year, another shore power cut. this one was longer, maybe an hour. hub recovered fine this time actually, all lights came back on their own",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 648
+    },
+    {
+      "text": "Good news \u2014 looks like the hub found the bulbs cleanly after this one. Maybe the longer gap gave everything time to fully reset before reconnecting.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 648
+    },
+    {
+      "text": "ja maybe. still a bit annoying that its always a lottery. the marina really needs to sort their electrics but getting an electrician to come to floating moorings is a nightmare here",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 648
+    },
+    {
+      "text": "january is freezing, the canal almost iced over near the bow this morning. got the lights on a really dim warm scene all day, kind of like permanent candlelight mode. working nicely",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 641
+    },
+    {
+      "text": "That sounds really atmospheric. You could save that as a custom scene so you can trigger it in one tap when the cold sets in each year.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 641
+    },
+    {
+      "text": "good idea, done. called it Ijsdag haha",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 640
+    },
+    {
+      "text": "Anouk came by and noticed the bedroom bulb is flickering a little. not sure if its the bulb or the dimmer setting",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 634
+    },
+    {
+      "text": "Flickering at low dim levels is usually the bulb hitting the lower end of its range. Try setting the minimum brightness floor to about 15% in the bulb settings \u2014 that usually clears it up.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 634
+    },
+    {
+      "text": "that fixed it, thanks. Anouk says hi by the way and wants to know if Lumio does outdoor lights because she wants them for her student apartment balcony",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 633
+    },
+    {
+      "text": "Tell Anouk we have an outdoor strip and a couple of weatherproof bulb options in the shop. They pair to any existing hub.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 633
+    },
+    {
+      "text": "tried to access the app remotely from my phone when i was in Rotterdam for work. it just said hub offline. but when i got home the hub was clearly on and working fine",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 621
+    },
+    {
+      "text": "Remote connectivity check on account: hub showed intermittent cloud heartbeat loss during the 14:00-15:30 window noted. Likely marina router hiccup.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 621
+    },
+    {
+      "text": "Looks like your marina router had a brief cloud disconnect that afternoon \u2014 the hub itself was fine locally. These are usually short-lived. If it keeps happening it might be worth checking whether the marina wifi is stable or if you need a separate connection for the hub.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 621
+    },
+    {
+      "text": "the marina wifi is terrible honestly. i use a 4G router of my own for the barge internet. maybe i should just make sure the hub is on that one and not the marina network",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 620
+    },
+    {
+      "text": "Yes, that is a much better setup. Move the hub to your 4G router network and you should get much more reliable remote access. Just re-enter the wifi credentials in Settings > Hub > Network.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 620
+    },
+    {
+      "text": "switched it over, works well now. should have done that from the start",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 619
+    },
+    {
+      "text": "good morning, hub rebooted itself again overnight. third time this month i think",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 178
+    },
+    {
+      "text": "Morning James. That pattern of overnight reboots usually points to a power interruption \u2014 likely a brief shore-supply dip. The hub is recovering fine each time, but I can log these so we have a record if you want to escalate with the marina.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 178
+    },
+    {
+      "text": "yes please do that. the marina manager keeps saying the supply is stable but it clearly isnt",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 178
+    },
+    {
+      "text": "Hub v1 connectivity dropped for 14 minutes at approximately 02:40 local time. Device self-recovered. Shore-power fluctuation suspected.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 177
+    },
+    {
+      "text": "anouk is coming this weekend, can i make a scene that turns on the fairy lights in her cabin and sets heating to 20 degrees? she always complains its cold down there",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 174
+    },
+    {
+      "text": "Absolutely. You can build that as a Scene in the app \u2014 name it something like 'Anouk arrives', set the cabin bulbs and the thermostat together, then either trigger it manually or tie it to a time on Friday evening. Want me to walk you through it?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 174
+    },
+    {
+      "text": "yeah walk me through it, i always forget which menu it is",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 174
+    },
+    {
+      "text": "ok got it working i think. tested it and the lights came on. heating i am not 100% sure, the thermostat icon just spins",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 173
+    },
+    {
+      "text": "The spinning icon usually means the hub is waiting for a response from the thermostat. Can you check if the thermostat shows as 'online' in Devices? Sometimes after a reboot it needs a minute to re-pair.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 173
+    },
+    {
+      "text": "it says online now and the scene ran properly. must have just been slow. all good",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 173
+    },
+    {
+      "text": "anouk loved the lights by the way. she said the barge finally feels like a proper home haha",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 170
+    },
+    {
+      "text": "That's great to hear! Fairy lights on a barge does sound pretty perfect honestly.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 170
+    },
+    {
+      "text": "quick question \u2014 my lumio app keeps switching the interface to english even though i have my phone set to dutch. is there a setting somewhere",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 166
+    },
+    {
+      "text": "There is a language setting inside the app itself under Profile > Preferences \u2014 it doesn't always inherit from the phone OS. Set it to Nederlands there and it should stick. Let me know if it keeps reverting.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 166
+    },
+    {
+      "text": "found it, changed it. though honestly some of the dutch translations are a bit weird. 'slimme sc\u00e8ne' sounds strange to me. minor thing",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 166
+    },
+    {
+      "text": "User flagged Dutch translation feedback \u2014 'slimme sc\u00e8ne' label noted as feeling unnatural. Passed to localisation team.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 165
+    },
+    {
+      "text": "its getting properly warm now, canal is lovely in the evenings. started leaving the deck hatch open at night which means my motion sensor keeps triggering the hallway light. bit annoying",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 161
+    },
+    {
+      "text": "You can narrow the sensitivity or set an active schedule on that sensor \u2014 so it only triggers between say sunset and midnight and ignores movement after that. Would that work for you?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 161
+    },
+    {
+      "text": "yes that sounds good. midnight to 07:00 off would be ideal",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 161
+    },
+    {
+      "text": "Done, or rather \u2014 you can set that in the sensor settings under 'Active hours'. Let me know if the path is unclear and I can guide you step by step.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 160
+    },
+    {
+      "text": "managed it myself actually, quite proud. no more random hallway light at 2am",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 159
+    },
+    {
+      "text": "a boat from the sailing club was playing very loud music last night and i jokingly told my hub to turn off their lights. obviously didnt work haha. would be a feature though",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 155
+    },
+    {
+      "text": "Ha \u2014 neighbourhood control is unfortunately not in the roadmap. Glad the hub at least behaved itself.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 155
+    },
+    {
+      "text": "billing question \u2014 i was charged twice in april i think. or maybe march. the amounts look the same on my bank statement",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 151
+    },
+    {
+      "text": "I can look into that for you. Can you confirm the email address on your Lumio account and roughly which months you're seeing duplicates for? I'll flag it for billing review.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 151
+    },
+    {
+      "text": "its james.vandermeer at the gmail one. i think it was two charges around the same week, maybe subscription renewal hit twice",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 151
+    },
+    {
+      "text": "Billing review initiated for account james.vandermeer@gmail.com. Possible duplicate subscription charge identified \u2014 credit note process started.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 149
+    },
+    {
+      "text": "billing team sorted it, got a credit. thanks for pushing that through",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 147
+    },
+    {
+      "text": "the tulips along the canal bank are completely gone now, summer happened fast. the blinds routine i set in spring still runs every morning \u2014 does it make sense to keep it or should i adjust",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 143
+    },
+    {
+      "text": "Worth reviewing \u2014 summer sunrise is earlier and the angle changes, so the schedule that worked in April might be opening blinds when you still want privacy. What time does your current routine trigger?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 143
+    },
+    {
+      "text": "06:15. yeah thats too early now that i think about it. i will push it to 07:30",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 143
+    },
+    {
+      "text": "hub went offline for about 40 minutes this afternoon. shore power again i assume. everything came back fine but the smart plugs in the galley lost their schedules",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 139
+    },
+    {
+      "text": "Shore-power interruption confirmed at 14:12 local, duration approximately 38 minutes. Hub recovery normal. Three smart plug schedules cleared from memory \u2014 known issue with extended outages on Hub v1.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 139
+    },
+    {
+      "text": "This is a known Hub v1 limitation \u2014 longer outages can wipe plug schedules from local memory. Hub v2 holds schedules in persistent storage so this wouldn't happen. Might be worth factoring that in if you're still thinking about upgrading.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 138
+    },
+    {
+      "text": "yeah i keep going back and forth on the v2. the price is the thing. and finding an electrician who will come to a moored barge is a whole project on its own. last time i waited six weeks",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 138
+    },
+    {
+      "text": "The v2 hub swap itself doesn't require an electrician \u2014 it just replaces the hub unit and you re-pair your devices. No wiring involved unless you're adding new hardwired kit.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 138
+    },
+    {
+      "text": "oh really? i assumed it needed to be wired in. that changes things a bit. so i could basically just do it myself on a sunday afternoon?",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 137
+    },
+    {
+      "text": "Exactly \u2014 it's plug and play for the hub itself. The migration tool in the app should carry over most of your scenes and device settings too. Takes most people under an hour.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 137
+    },
+    {
+      "text": "anouk is staying for a whole week this time, she is between jobs. she keeps changing all my lighting scenes and i dont know how to lock them or at least get notified when something changes",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 132
+    },
+    {
+      "text": "You can set Anouk's account to 'Member' rather than 'Admin' access \u2014 Members can trigger scenes but can't edit or delete them. Would that work without causing a family argument?",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 132
+    },
+    {
+      "text": "haha probably best not to mention it to her. ill just quietly change it. she means well",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 132
+    },
+    {
+      "text": "had a nice week with anouk. she actually got quite into the lumio app, was asking about the hub v2 herself and whether it supports better colour bulbs. she has opinions",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 125
+    },
+    {
+      "text": "Hub v2 does support the full extended colour range bulbs, yes \u2014 and the response time is noticeably faster. Sounds like Anouk might be your best argument for upgrading.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 125
+    },
+    {
+      "text": "she literally said 'papa just buy the v2 already' so maybe she is right. i will think about it more seriously",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 124
+    },
+    {
+      "text": "app crashed three times today while i was trying to edit a scene. just closes itself. iphone, latest ios",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 118
+    },
+    {
+      "text": "App crash reported by user on iOS, scene editing flow. Crash logs requested.",
+      "role": "system",
+      "event_type": "observation",
+      "days_ago": 118
+    },
+    {
+      "text": "Sorry about that James. A fix for that crash in the scene editor went out recently \u2014 can you check you're on the latest app version in the App Store? Should be resolved after updating.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 117
+    },
+    {
+      "text": "updated it and its fine now. should have tried that first i suppose",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 117
+    },
+    {
+      "text": "its getting darker earlier already, autumn coming. put the 'evening canal' scene back on \u2014 warm lights at 18:30, dims at 22:00. feels good to have that back",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 109
+    },
+    {
+      "text": "That sounds really cosy. Barge life in early autumn with the right lighting must be something.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 109
+    },
+    {
+      "text": "ok i think i am finally going to order the hub v2. anouk convinced me and honestly the schedule-loss thing after the power cuts has happened twice more. ready to just do it",
+      "role": "user",
+      "event_type": "user_message",
+      "days_ago": 97
+    },
+    {
+      "text": "Great decision James \u2014 especially given your shore-power situation. I can help you through the migration whenever it arrives. The process is straightforward and your existing scenes should transfer cleanly. Let me know when you're ready.",
+      "role": "assistant",
+      "event_type": "agent_message",
+      "days_ago": 96
+    }
+  ],
+  "semantic": [
+    {
+      "text": "James is a Dutch man in his 50s living on a converted Dutch barge moored at Sixhaven in Amsterdam-Noord.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 720
+    },
+    {
+      "text": "James's home is a barge, which means accessing electrical infrastructure requires coordinating with marina management and specialist marine electricians.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 710
+    },
+    {
+      "text": "James receives shore-supplied power at his mooring, which is subject to occasional brownouts and brief outages.",
+      "fact_type": "constraint",
+      "confidence": 0.98,
+      "days_ago": 700
+    },
+    {
+      "text": "James owns a Lumio Hub v1 and has been a casual, low-intensity user of the platform since at least two years ago.",
+      "fact_type": "identity",
+      "confidence": 0.97,
+      "days_ago": 690
+    },
+    {
+      "text": "James prefers to interact with Lumio support and interfaces in Dutch when available, switching to English only when necessary.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 680
+    },
+    {
+      "text": "James's daughter Anouk, in her early 20s, visits him on the barge most weekends and occasionally adjusts lighting and scene settings.",
+      "fact_type": "identity",
+      "confidence": 0.95,
+      "days_ago": 670
+    },
+    {
+      "text": "During winter months James relies heavily on automated warm-white lighting scenes in the evenings to compensate for early darkness on the canal.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 650
+    },
+    {
+      "text": "James has a set of tulip-print roller blinds he lowers on spring mornings to reduce glare, and he prefers lighting scenes that compensate for the reduced natural light.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 610
+    },
+    {
+      "text": "Finding a qualified marine electrician willing to come to Sixhaven moorings is difficult for James and causes delays in any hardware installation or repair.",
+      "fact_type": "constraint",
+      "confidence": 0.93,
+      "days_ago": 600
+    },
+    {
+      "text": "James has expressed interest in upgrading to a Lumio Hub v2 but wavers repeatedly over whether the improvement justifies the effort of installation on a barge.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 580
+    },
+    {
+      "text": "Brownouts at the Sixhaven shore-power supply have caused James's Lumio Hub v1 to reboot unexpectedly on multiple occasions.",
+      "fact_type": "constraint",
+      "confidence": 0.96,
+      "days_ago": 560
+    },
+    {
+      "text": "James prefers low-effort, minimal-configuration smart home interactions and rarely experiments with advanced automation features.",
+      "fact_type": "preference",
+      "confidence": 0.91,
+      "days_ago": 540
+    },
+    {
+      "text": "In summer James spends time on the deck of the barge and prefers outdoor-adjacent lighting scenes that transition softly after sunset.",
+      "fact_type": "preference",
+      "confidence": 0.87,
+      "days_ago": 510
+    },
+    {
+      "text": "Amsterdam-Noord's Sixhaven marina is a real residential mooring location in the Netherlands, situated north of the IJ waterway.",
+      "fact_type": "world",
+      "confidence": 1.0,
+      "days_ago": 500
+    },
+    {
+      "text": "Dutch barges converted for residential use typically have limited and non-standard electrical panel setups compared to land-based homes.",
+      "fact_type": "world",
+      "confidence": 0.97,
+      "days_ago": 490
+    },
+    {
+      "text": "James keeps the barge interior warm in winter using a diesel-fired central heating system, and he pairs Lumio warm lighting scenes with heating routines.",
+      "fact_type": "preference",
+      "confidence": 0.84,
+      "days_ago": 470
+    },
+    {
+      "text": "Anouk is more tech-savvy than James and sometimes enables features on the Lumio system during her weekend visits that James later finds confusing.",
+      "fact_type": "identity",
+      "confidence": 0.82,
+      "days_ago": 450
+    },
+    {
+      "text": "James has asked whether the Lumio Hub v2 has better power-resilience or brownout recovery compared to the v1.",
+      "fact_type": "preference",
+      "confidence": 0.89,
+      "days_ago": 430
+    },
+    {
+      "text": "Shore-power brownouts at residential marinas in the Netherlands are more common in winter due to high collective heating and electrical demand.",
+      "fact_type": "world",
+      "confidence": 0.88,
+      "days_ago": 420
+    },
+    {
+      "text": "James prefers to use voice or simple app commands rather than building complex scenes or schedules in the Lumio interface.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 400
+    },
+    {
+      "text": "James expressed that the physical space on the barge makes it inconvenient to place multiple Lumio devices and he prefers a centralised single-hub approach.",
+      "fact_type": "constraint",
+      "confidence": 0.86,
+      "days_ago": 380
+    },
+    {
+      "text": "During the spring tulip season James notices increased canal boat traffic past Sixhaven and prefers dimmed privacy lighting in the barge's main cabin in evenings.",
+      "fact_type": "preference",
+      "confidence": 0.83,
+      "days_ago": 360
+    },
+    {
+      "text": "James has noted that the Lumio Hub v1 occasionally loses its scene configuration after a power cut and he finds reconfiguring it frustrating.",
+      "fact_type": "constraint",
+      "confidence": 0.94,
+      "days_ago": 340
+    },
+    {
+      "text": "James tends to use only two or three fixed lighting scenes regularly and has no interest in maintaining a large library of custom scenes.",
+      "fact_type": "preference",
+      "confidence": 0.91,
+      "days_ago": 310
+    },
+    {
+      "text": "The Lumio Hub v2 offers improved power-cut recovery and state persistence compared to the Hub v1.",
+      "fact_type": "world",
+      "confidence": 0.93,
+      "days_ago": 290
+    },
+    {
+      "text": "James mentioned that he would only upgrade to Hub v2 if installation could be done without needing an electrician, or with a very simple self-install process.",
+      "fact_type": "constraint",
+      "confidence": 0.9,
+      "days_ago": 260
+    },
+    {
+      "text": "In autumn James appreciates Lumio scenes that simulate late-afternoon golden light inside the barge as natural daylight shortens rapidly.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 230
+    },
+    {
+      "text": "Anouk has shown James how to use scheduled sunrise and sunset automations, and he has kept this running as his primary active automation.",
+      "fact_type": "identity",
+      "confidence": 0.87,
+      "days_ago": 180
+    },
+    {
+      "text": "James remains undecided on Hub v2 upgrade as of approximately six months ago, citing installation hassle as the main barrier rather than cost.",
+      "fact_type": "preference",
+      "confidence": 0.89,
+      "days_ago": 150
+    },
+    {
+      "text": "James values reliability and stability in smart home devices above new features, and a device that survives power fluctuations is his top hardware priority.",
+      "fact_type": "preference",
+      "confidence": 0.95,
+      "days_ago": 90
+    },
+    {
+      "text": "James is a Dutch man in his 50s living on a converted Dutch barge moored at Sixhaven in Amsterdam-Noord.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 730
+    },
+    {
+      "text": "James uses shore-supply power for his barge and experiences occasional brownouts at the Sixhaven moorings.",
+      "fact_type": "constraint",
+      "confidence": 1.0,
+      "days_ago": 720
+    },
+    {
+      "text": "James owns a Lumio Hub v1 and has been a casual, low-intensity user since purchase.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 710
+    },
+    {
+      "text": "James prefers to receive Lumio app notifications and support communications in Dutch rather than English.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 700
+    },
+    {
+      "text": "James's daughter Anouk, in her early 20s, visits him on the barge on most weekends.",
+      "fact_type": "identity",
+      "confidence": 1.0,
+      "days_ago": 690
+    },
+    {
+      "text": "Sixhaven is a marina in Amsterdam-Noord where access for tradespeople such as electricians is logistically difficult.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 680
+    },
+    {
+      "text": "James has noted that scheduling a qualified electrician to visit his mooring is time-consuming and often delayed.",
+      "fact_type": "constraint",
+      "confidence": 0.9,
+      "days_ago": 670
+    },
+    {
+      "text": "During winter months James relies heavily on automated Lumio lighting scenes to compensate for low natural light inside the barge.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 650
+    },
+    {
+      "text": "James has set warm-white, high-brightness lighting scenes in the main saloon for winter evenings.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 630
+    },
+    {
+      "text": "Shore-power brownouts at Sixhaven cause James's Lumio Hub v1 to lose its schedule and require manual reconfiguration.",
+      "fact_type": "constraint",
+      "confidence": 0.95,
+      "days_ago": 610
+    },
+    {
+      "text": "James expressed frustration that after brownout events the Hub v1 does not reliably restore its previous automation schedules.",
+      "fact_type": "preference",
+      "confidence": 0.87,
+      "days_ago": 600
+    },
+    {
+      "text": "James first raised the question of whether upgrading to a Lumio Hub v2 would be worthwhile approximately two years ago.",
+      "fact_type": "identity",
+      "confidence": 0.85,
+      "days_ago": 590
+    },
+    {
+      "text": "The Lumio Hub v2 offers improved power-resilience features including state restoration after unexpected power interruptions.",
+      "fact_type": "world",
+      "confidence": 0.95,
+      "days_ago": 580
+    },
+    {
+      "text": "In spring James uses tulip-print roller blinds on the barge portholes which reduce daylight and affect ambient light sensor readings.",
+      "fact_type": "constraint",
+      "confidence": 0.85,
+      "days_ago": 540
+    },
+    {
+      "text": "James prefers dimmed, indirect lighting in the evenings and dislikes scenes with sudden brightness transitions.",
+      "fact_type": "preference",
+      "confidence": 0.9,
+      "days_ago": 520
+    },
+    {
+      "text": "During summer Anouk and James spend evenings on the barge deck and James has created an outdoor-adjacent low-brightness scene for those occasions.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 490
+    },
+    {
+      "text": "Canal traffic noise and activity at Sixhaven increases significantly during summer months.",
+      "fact_type": "world",
+      "confidence": 0.9,
+      "days_ago": 480
+    },
+    {
+      "text": "James occasionally enables a 'do not disturb' mode on the Lumio app during weekends when Anouk is visiting.",
+      "fact_type": "preference",
+      "confidence": 0.82,
+      "days_ago": 460
+    },
+    {
+      "text": "James has a limited number of Lumio smart bulbs installed, covering the saloon, galley, and one cabin only.",
+      "fact_type": "identity",
+      "confidence": 0.9,
+      "days_ago": 440
+    },
+    {
+      "text": "James described himself as not particularly technical and prefers simple, stable configurations over advanced automation features.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 420
+    },
+    {
+      "text": "A second brownout event caused James to lose his evening dimming schedule and reinforced his interest in a Hub v2 upgrade.",
+      "fact_type": "constraint",
+      "confidence": 0.9,
+      "days_ago": 400
+    },
+    {
+      "text": "James wavered on the Hub v2 upgrade decision, citing uncertainty about whether the improvement justified the cost and installation effort.",
+      "fact_type": "preference",
+      "confidence": 0.88,
+      "days_ago": 380
+    },
+    {
+      "text": "Anouk encouraged James to upgrade to the Hub v2, considering herself more tech-savvy and willing to help with setup.",
+      "fact_type": "identity",
+      "confidence": 0.8,
+      "days_ago": 360
+    },
+    {
+      "text": "James uses a single shared tablet mounted in the galley as his primary Lumio control interface rather than a smartphone.",
+      "fact_type": "preference",
+      "confidence": 0.85,
+      "days_ago": 340
+    },
+    {
+      "text": "During the second winter James increased the duration of his warm-light morning scene to help with waking during dark Dutch mornings.",
+      "fact_type": "preference",
+      "confidence": 0.87,
+      "days_ago": 300
+    },
+    {
+      "text": "Shore-power quality at Amsterdam-Noord marina moorings is known to be variable, particularly in winter when heating loads are high.",
+      "fact_type": "world",
+      "confidence": 0.9,
+      "days_ago": 270
+    },
+    {
+      "text": "James has not expanded his Lumio device count in two years, suggesting a stable but non-growing installation.",
+      "fact_type": "identity",
+      "confidence": 0.85,
+      "days_ago": 200
+    },
+    {
+      "text": "James prefers Lumio customer support interactions to be concise and solution-focused, without lengthy technical explanations.",
+      "fact_type": "preference",
+      "confidence": 0.83,
+      "days_ago": 150
+    },
+    {
+      "text": "As of recent months James remains undecided on the Hub v2 upgrade but considers it more seriously after each brownout incident.",
+      "fact_type": "identity",
+      "confidence": 0.88,
+      "days_ago": 60
+    },
+    {
+      "text": "James values lighting reliability and schedule persistence above new smart-home features when evaluating potential hardware upgrades.",
+      "fact_type": "preference",
+      "confidence": 0.92,
+      "days_ago": 30
+    }
+  ],
+  "procedural": [
+    {
+      "name": "hub_v1_brownout_recovery",
+      "trigger_text": "my lights stopped responding after a power dip or brownout on the barge",
+      "description": "Step-by-step recovery procedure for Hub v1 losing connectivity or becoming unresponsive after a shore-supply brownout at Sixhaven.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask James whether the Hub v1 LED is off, solid, or flashing, and whether any other 12V or 230V devices on the barge also lost power briefly.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall known Hub v1 behaviour on under-voltage events: the hub may lock up and require a full power cycle rather than a soft reboot.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Instruct James to unplug the Hub v1 power adapter from the shore-supply socket, wait 30 seconds, then plug it back in and wait 2 minutes for full boot.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Ask James to open the Lumio app and confirm whether the hub is back online and lights are responding.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "If the hub is still offline after the power cycle, escalate to Tier 2 with notes: Hub v1, shore-supply brownout, Amsterdam-Noord barge, LED state, and steps already taken.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 14
+    },
+    {
+      "name": "hub_v1_to_v2_upgrade_assessment",
+      "trigger_text": "should I upgrade my hub or is my old hub good enough",
+      "description": "Consultative playbook to help James assess whether upgrading from Hub v1 to Hub v2 is worthwhile given his casual usage, brownout environment, and occasional weekend use with daughter Anouk.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Recall Hub v1 vs Hub v2 feature differences, particularly improved power-resilience circuitry, faster reconnect after outages, and any v1 end-of-support timeline.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 2,
+          "instruction": "Ask James how often he experiences brownouts and whether missed automations or slow app response are causing him frustration.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask whether Anouk controls lights independently via her own app profile on weekends, since Hub v2 supports more concurrent app sessions.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Summarise upgrade benefits relevant to James: better brownout recovery, longer software support, and smoother multi-user weekends with Anouk. Confirm whether he wants a quote or a trial period option.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "If James wants to proceed, escalate to sales team with context: Hub v1 owner, barge shore-supply environment, casual user, daughter co-user on weekends.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 7
+    },
+    {
+      "name": "weekend_guest_app_access_setup",
+      "trigger_text": "my daughter wants to control the lights from her phone when she visits",
+      "description": "Playbook for setting up Anouk as a secondary app user on James's Lumio account so she can control lights on the barge during weekend visits.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Recall the Lumio guest or secondary-user invitation flow for Hub v1, including any limitations on the number of secondary users.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 2,
+          "instruction": "Ask James whether Anouk already has the Lumio app installed and a Lumio account, or whether she needs to create one first.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 3,
+          "instruction": "Guide James to open the Lumio app, go to Settings, select Home Members or Share Access, and enter Anouk's email address to send her an invitation.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Ask James to confirm Anouk received the invitation email and accepted it, then have her open the app to verify the barge home appears in her account.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "If the invitation does not arrive or the home does not appear for Anouk, escalate to Tier 2 with account details and note the Hub v1 secondary-user limitation as a possible cause.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 21
+    },
+    {
+      "name": "hub_v1_offline_moored_environment_check",
+      "trigger_text": "my hub keeps going offline even when the power seems fine",
+      "description": "Diagnostic playbook for intermittent Hub v1 offline events specific to a barge mooring context, covering Wi-Fi signal, power quality, and physical environment factors at Sixhaven.",
+      "steps": [
+        {
+          "order": 1,
+          "instruction": "Ask James how far the Wi-Fi router is from the Hub v1 on the barge, whether the router is also on shore power, and whether the hub is near any metal bulkheads or engine compartments.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 2,
+          "instruction": "Recall known Hub v1 sensitivities: marginal Wi-Fi signal causes frequent drops, and metal hulls on barges are a documented signal-attenuation factor.",
+          "tool": "recall_memory"
+        },
+        {
+          "order": 3,
+          "instruction": "Ask James to check the Lumio app event log or hub LED behaviour to determine whether the dropouts happen at specific times such as evenings when shore-supply load is highest.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 4,
+          "instruction": "Recommend James move the router closer to the hub or add a Wi-Fi extender, and suggest a UPS or line conditioner on the shore-supply feed to smooth brownouts before they reach the hub.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 5,
+          "instruction": "Ask James to monitor for 48 hours after any changes and report whether offline events have reduced in frequency.",
+          "tool": "ask_user"
+        },
+        {
+          "order": 6,
+          "instruction": "If dropouts persist after environmental improvements, escalate to Tier 2 with full diagnostic notes: barge metal hull, shore-supply brownouts, Wi-Fi distance, Hub v1 firmware version.",
+          "tool": "escalate"
+        }
+      ],
+      "days_ago": 3
+    }
+  ]
+}

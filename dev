@@ -1,0 +1,1188 @@
+#!/bin/bash
+
+# =============================================================================
+# Dev Server Management Script
+# =============================================================================
+# Usage:
+#   ./dev start         - Start backend and frontend servers
+#   ./dev stop          - Stop all servers
+#   ./dev restart       - Restart all servers
+#   ./dev status        - Check if servers are running
+#   ./dev logs          - Show server logs (tail -f, follows indefinitely)
+#   ./dev logs-snapshot - Show recent logs and exit (non-blocking)
+#   ./dev open          - Open browser to frontend
+#   ./dev verify-search  - Verify search endpoint returns results and aggregations
+#   ./dev test-search    - Test semantic + keyword search quality
+# =============================================================================
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+DIM='\033[2m'
+NC='\033[0m'
+
+# PID files location
+PID_DIR=".dev-pids"
+BACKEND_PID_FILE="$PID_DIR/backend.pid"
+FRONTEND_PID_FILE="$PID_DIR/frontend.pid"
+LOG_DIR=".dev-logs"
+
+# Default ports
+DEFAULT_BACKEND_PORT=8001
+DEFAULT_FRONTEND_PORT=3000
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+ensure_dirs() {
+    mkdir -p "$PID_DIR" "$LOG_DIR"
+}
+
+is_running() {
+    local pid_file=$1
+    if [ -f "$pid_file" ]; then
+        local pid=$(cat "$pid_file")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+get_pid() {
+    local pid_file=$1
+    if [ -f "$pid_file" ]; then
+        cat "$pid_file"
+    fi
+}
+
+# Check if a port is available (not in use)
+is_port_available() {
+    local port=$1
+    ! lsof -i:"$port" > /dev/null 2>&1
+}
+
+# Find an available port starting from the given port
+find_available_port() {
+    local start_port=$1
+    local max_attempts=100
+    local port=$start_port
+    
+    for ((i=0; i<max_attempts; i++)); do
+        if is_port_available "$port"; then
+            echo "$port"
+            return 0
+        fi
+        ((port++))
+    done
+    
+    echo ""
+    return 1
+}
+
+# Read ports from .env file
+read_env_ports() {
+    BACKEND_PORT=$DEFAULT_BACKEND_PORT
+    FRONTEND_PORT=$DEFAULT_FRONTEND_PORT
+    
+    if [ -f backend/.env ]; then
+        while IFS='=' read -r key value; do
+            case "$key" in
+                PORT) BACKEND_PORT="$value" ;;
+                FRONTEND_PORT) FRONTEND_PORT="$value" ;;
+            esac
+        done < <(grep -E '^(PORT|FRONTEND_PORT)=' backend/.env 2>/dev/null || true)
+    fi
+}
+
+# Detect whether hive-mind content is available across layouts.
+# Supports legacy patterns layout and newer skills/index layouts.
+is_hive_mind_loaded() {
+    [ -d "hive-mind/patterns" ] || \
+    [ -f "hive-mind/.hive-mind-index.json" ] || \
+    [ -d "hive-mind/skills" ] || \
+    [ -d "hive-mind/.cursor/skills" ]
+}
+
+# Count issue rows from bd command output in a portable way.
+count_bd_issue_lines() {
+    local output
+    local count
+
+    output=$("$@" 2>/dev/null || true)
+    count=$(printf '%s\n' "$output" | grep -cE '^[[:space:]]*([0-9]+\.|\[P[0-9]+\])' || true)
+    echo "${count:-0}"
+}
+
+# Update a single value in .env file
+update_env_value() {
+    local key=$1
+    local value=$2
+    local env_file="backend/.env"
+    
+    if [ ! -f "$env_file" ]; then
+        return 1
+    fi
+    
+    if grep -q "^${key}=" "$env_file"; then
+        # Update existing key
+        sed -i.bak "s|^${key}=.*|${key}=${value}|" "$env_file"
+        rm -f "${env_file}.bak"
+    else
+        # Add new key
+        echo "${key}=${value}" >> "$env_file"
+    fi
+}
+
+# =============================================================================
+# Commands
+# =============================================================================
+
+check_dependencies() {
+    local missing=()
+    
+    # Check for yarn or npm (need at least one)
+    if ! command -v yarn &> /dev/null && ! command -v npm &> /dev/null; then
+        missing+=("yarn or npm (Node.js package manager)")
+    fi
+    
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo -e "${RED}❌ Missing dependencies:${NC}"
+        for dep in "${missing[@]}"; do
+            echo -e "   - $dep"
+        done
+        echo ""
+        echo -e "${YELLOW}To fix:${NC}"
+        if [[ " ${missing[*]} " =~ "yarn or npm" ]]; then
+            echo -e "   Install Node.js: ${BLUE}https://nodejs.org/${NC}"
+            echo -e "   Or with Homebrew: ${BLUE}brew install node${NC}"
+        fi
+        echo ""
+        echo -e "Then run ${BLUE}./setup.sh${NC} to complete setup."
+        exit 1
+    fi
+}
+
+# Detect which package manager to use (prefer yarn if available)
+get_pkg_manager() {
+    if command -v yarn &> /dev/null; then
+        echo "yarn"
+    elif command -v npm &> /dev/null; then
+        echo "npm"
+    else
+        echo ""
+    fi
+}
+
+get_backend_command() {
+    if command -v uv &> /dev/null; then
+        echo "uv run elastic-demo-starter-backend"
+    else
+        echo -e "${YELLOW}⚠️  uv not found. Falling back to system Python.${NC}"
+        echo "  Install uv for faster, reproducible installs: https://docs.astral.sh/uv/"
+        echo "python run.py"
+    fi
+}
+
+cmd_start() {
+    ensure_dirs
+    check_dependencies
+    read_env_ports
+    
+    echo -e "${BLUE}🚀 Starting Elastic Demo Starter...${NC}"
+    echo ""
+    
+    local ports_changed=false
+    
+    # -------------------------------------------------------------------------
+    # Start Backend
+    # -------------------------------------------------------------------------
+    if is_running "$BACKEND_PID_FILE"; then
+        echo -e "${YELLOW}⚠️  Backend already running (PID: $(get_pid $BACKEND_PID_FILE))${NC}"
+    else
+        # Check if configured port is available
+        if ! is_port_available "$BACKEND_PORT"; then
+            local old_port=$BACKEND_PORT
+            BACKEND_PORT=$(find_available_port "$BACKEND_PORT")
+            
+            if [ -z "$BACKEND_PORT" ]; then
+                echo -e "${RED}❌ Could not find available port for backend (tried $old_port-$((old_port+99)))${NC}"
+                exit 1
+            fi
+            
+            echo -e "${YELLOW}⚠️  Port $old_port in use, using $BACKEND_PORT instead${NC}"
+            update_env_value "PORT" "$BACKEND_PORT"
+            ports_changed=true
+        fi
+        
+        echo -e "Starting backend on port ${GREEN}$BACKEND_PORT${NC}..."
+        cd backend
+        local backend_cmd
+        backend_cmd=$(get_backend_command)
+        PORT=$BACKEND_PORT nohup bash -c "$backend_cmd" > "../$LOG_DIR/backend.log" 2>&1 &
+        echo $! > "../$BACKEND_PID_FILE"
+        cd ..
+        echo -e "${GREEN}✅ Backend started${NC} (PID: $(get_pid $BACKEND_PID_FILE))"
+    fi
+    
+    # -------------------------------------------------------------------------
+    # Start Frontend
+    # -------------------------------------------------------------------------
+    if is_running "$FRONTEND_PID_FILE"; then
+        echo -e "${YELLOW}⚠️  Frontend already running (PID: $(get_pid $FRONTEND_PID_FILE))${NC}"
+    else
+        # Check if configured port is available
+        if ! is_port_available "$FRONTEND_PORT"; then
+            local old_port=$FRONTEND_PORT
+            FRONTEND_PORT=$(find_available_port "$FRONTEND_PORT")
+            
+            if [ -z "$FRONTEND_PORT" ]; then
+                echo -e "${RED}❌ Could not find available port for frontend (tried $old_port-$((old_port+99)))${NC}"
+                exit 1
+            fi
+            
+            echo -e "${YELLOW}⚠️  Port $old_port in use, using $FRONTEND_PORT instead${NC}"
+            update_env_value "FRONTEND_PORT" "$FRONTEND_PORT"
+            ports_changed=true
+        fi
+        
+        echo -e "Starting frontend on port ${GREEN}$FRONTEND_PORT${NC}..."
+        cd frontend
+        # Detect package manager (prefer yarn, fall back to npm)
+        local pkg_manager=$(get_pkg_manager)
+        if [ -z "$pkg_manager" ]; then
+            echo -e "${RED}❌ No package manager found (yarn or npm)${NC}"
+            exit 1
+        fi
+        # Use --strictPort so Vite fails instead of silently switching ports
+        # Pass BACKEND_PORT so vite proxy knows where to proxy API requests
+        if [ "$pkg_manager" = "yarn" ]; then
+            VITE_BACKEND_PORT=$BACKEND_PORT nohup yarn dev --port $FRONTEND_PORT --strictPort > "../$LOG_DIR/frontend.log" 2>&1 &
+        else
+            VITE_BACKEND_PORT=$BACKEND_PORT nohup npm run dev -- --port $FRONTEND_PORT --strictPort > "../$LOG_DIR/frontend.log" 2>&1 &
+        fi
+        echo $! > "../$FRONTEND_PID_FILE"
+        cd ..
+        echo -e "${GREEN}✅ Frontend started${NC} (PID: $(get_pid $FRONTEND_PID_FILE))"
+    fi
+    
+    # -------------------------------------------------------------------------
+    # Summary
+    # -------------------------------------------------------------------------
+    echo ""
+    if [ "$ports_changed" = true ]; then
+        echo -e "${YELLOW}📝 Updated backend/.env with new port(s)${NC}"
+    fi
+    
+    echo -e "${GREEN}Servers starting...${NC}"
+    echo -e "   Backend:  ${BLUE}http://localhost:$BACKEND_PORT${NC}"
+    echo -e "   Frontend: ${BLUE}http://localhost:$FRONTEND_PORT${NC}"
+    echo ""
+    echo -e "Run ${YELLOW}./dev logs${NC} to see output"
+    echo -e "Run ${YELLOW}./dev stop${NC} to stop servers"
+    
+    # Wait a moment then check if they're actually running
+    sleep 2
+    local failed=false
+    
+    if ! is_running "$BACKEND_PID_FILE"; then
+        echo ""
+        echo -e "${RED}⚠️  Backend failed to start${NC}"
+        echo -e "${DIM}   Check: cat $LOG_DIR/backend.log${NC}"
+        failed=true
+    fi
+    
+    if ! is_running "$FRONTEND_PID_FILE"; then
+        echo ""
+        echo -e "${RED}⚠️  Frontend failed to start${NC}"
+        echo -e "${DIM}   Check: cat $LOG_DIR/frontend.log${NC}"
+        failed=true
+    fi
+    
+    if [ "$failed" = false ]; then
+        # Save the actual ports being used for other commands
+        echo "$BACKEND_PORT" > "$PID_DIR/backend.port"
+        echo "$FRONTEND_PORT" > "$PID_DIR/frontend.port"
+    fi
+}
+
+cmd_stop() {
+    read_env_ports
+    
+    echo -e "${BLUE}Stopping servers...${NC}"
+    
+    if is_running "$BACKEND_PID_FILE"; then
+        local pid=$(get_pid "$BACKEND_PID_FILE")
+        kill "$pid" 2>/dev/null || true
+        rm -f "$BACKEND_PID_FILE"
+        echo -e "${GREEN}✅ Backend stopped${NC}"
+    else
+        echo -e "${YELLOW}Backend not running${NC}"
+    fi
+    
+    if is_running "$FRONTEND_PID_FILE"; then
+        local pid=$(get_pid "$FRONTEND_PID_FILE")
+        kill "$pid" 2>/dev/null || true
+        # Also kill any child processes (vite spawns children)
+        pkill -P "$pid" 2>/dev/null || true
+        rm -f "$FRONTEND_PID_FILE"
+        echo -e "${GREEN}✅ Frontend stopped${NC}"
+    else
+        echo -e "${YELLOW}Frontend not running${NC}"
+    fi
+    
+    # Clean up port files
+    rm -f "$PID_DIR/backend.port" "$PID_DIR/frontend.port"
+    
+    # Clean up any orphaned processes on our ports
+    # Only kill if ports are defined
+    if [ -n "$BACKEND_PORT" ]; then
+        lsof -ti:"$BACKEND_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
+    fi
+    if [ -n "$FRONTEND_PORT" ]; then
+        lsof -ti:"$FRONTEND_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
+    fi
+    
+    echo -e "${GREEN}All servers stopped${NC}"
+}
+
+cmd_restart() {
+    cmd_stop
+    sleep 1
+    cmd_start
+}
+
+cmd_status() {
+    read_env_ports
+    
+    # Try to read actual running ports
+    local actual_backend_port=$BACKEND_PORT
+    local actual_frontend_port=$FRONTEND_PORT
+    
+    if [ -f "$PID_DIR/backend.port" ]; then
+        actual_backend_port=$(cat "$PID_DIR/backend.port")
+    fi
+    if [ -f "$PID_DIR/frontend.port" ]; then
+        actual_frontend_port=$(cat "$PID_DIR/frontend.port")
+    fi
+    
+    echo -e "${BLUE}Server Status${NC}"
+    echo ""
+    
+    if is_running "$BACKEND_PID_FILE"; then
+        echo -e "Backend:  ${GREEN}● Running${NC} (PID: $(get_pid $BACKEND_PID_FILE), port $actual_backend_port)"
+    else
+        echo -e "Backend:  ${RED}○ Stopped${NC}"
+    fi
+    
+    if is_running "$FRONTEND_PID_FILE"; then
+        echo -e "Frontend: ${GREEN}● Running${NC} (PID: $(get_pid $FRONTEND_PID_FILE), port $actual_frontend_port)"
+    else
+        echo -e "Frontend: ${RED}○ Stopped${NC}"
+    fi
+    
+    echo ""
+    
+    # Check if ports are actually listening
+    if lsof -i:"$actual_backend_port" > /dev/null 2>&1; then
+        echo -e "Port $actual_backend_port: ${GREEN}listening${NC}"
+    else
+        echo -e "Port $actual_backend_port: ${RED}not listening${NC}"
+    fi
+    
+    if lsof -i:"$actual_frontend_port" > /dev/null 2>&1; then
+        echo -e "Port $actual_frontend_port: ${GREEN}listening${NC}"
+    else
+        echo -e "Port $actual_frontend_port: ${RED}not listening${NC}"
+    fi
+}
+
+cmd_logs() {
+    ensure_dirs
+    
+    echo -e "${BLUE}Tailing logs (Ctrl+C to exit)${NC}"
+    echo -e "Backend log:  $LOG_DIR/backend.log"
+    echo -e "Frontend log: $LOG_DIR/frontend.log"
+    echo ""
+    
+    # Use tail to follow both log files
+    tail -f "$LOG_DIR/backend.log" "$LOG_DIR/frontend.log" 2>/dev/null || {
+        echo -e "${YELLOW}No logs yet. Start servers with: ./dev start${NC}"
+    }
+}
+
+cmd_logs_snapshot() {
+    local lines=${1:-50}
+    ensure_dirs
+    
+    echo -e "${BLUE}=== Backend Logs (last $lines lines) ===${NC}"
+    if [ -f "$LOG_DIR/backend.log" ]; then
+        tail -n "$lines" "$LOG_DIR/backend.log" 2>/dev/null || echo "(empty)"
+    else
+        echo -e "${YELLOW}No backend log file${NC}"
+    fi
+    
+    echo ""
+    echo -e "${BLUE}=== Frontend Logs (last $lines lines) ===${NC}"
+    if [ -f "$LOG_DIR/frontend.log" ]; then
+        tail -n "$lines" "$LOG_DIR/frontend.log" 2>/dev/null || echo "(empty)"
+    else
+        echo -e "${YELLOW}No frontend log file${NC}"
+    fi
+}
+
+cmd_open() {
+    read_env_ports
+    
+    # Try to read actual running port
+    local actual_frontend_port=$FRONTEND_PORT
+    if [ -f "$PID_DIR/frontend.port" ]; then
+        actual_frontend_port=$(cat "$PID_DIR/frontend.port")
+    fi
+    
+    local url="http://localhost:$actual_frontend_port"
+    echo -e "Opening ${BLUE}$url${NC}..."
+    
+    # Detect OS and open browser
+    case "$(uname -s)" in
+        Darwin*) open "$url" ;;
+        Linux*) xdg-open "$url" 2>/dev/null || sensible-browser "$url" ;;
+        MINGW*|CYGWIN*) start "$url" ;;
+        *) echo "Please open $url in your browser" ;;
+    esac
+}
+
+cmd_test_agent() {
+    read_env_ports
+    
+    # Get actual running port
+    local actual_backend_port=$BACKEND_PORT
+    if [ -f "$PID_DIR/backend.port" ]; then
+        actual_backend_port=$(cat "$PID_DIR/backend.port")
+    fi
+    
+    echo -e "${BLUE}🤖 Testing Agent Builder Connection...${NC}"
+    echo ""
+    
+    # Check if backend is running
+    if ! is_running "$BACKEND_PID_FILE"; then
+        echo -e "${RED}❌ Backend not running${NC}"
+        echo -e "   Start with: ${BLUE}./dev start${NC}"
+        exit 1
+    fi
+    
+    # Step 1: Check agent health endpoint
+    echo -e "Checking agent configuration..."
+    local health_response
+    health_response=$(curl -s --max-time 10 "http://localhost:$actual_backend_port/api/agent/health" 2>&1)
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Could not reach backend${NC}"
+        echo -e "   Error: $health_response"
+        exit 1
+    fi
+    
+    # Parse health response
+    local agent_id=$(echo "$health_response" | grep -o '"agent_id":"[^"]*"' | cut -d'"' -f4)
+    local kibana_configured=$(echo "$health_response" | grep -o '"kibana_configured":true')
+    
+    if [ -z "$kibana_configured" ]; then
+        echo -e "${RED}❌ Kibana not configured${NC}"
+        echo -e "   Run: ${BLUE}./setup.sh${NC} to configure"
+        exit 1
+    fi
+    
+    echo -e "✅ Agent ID: ${GREEN}$agent_id${NC}"
+    echo -e "✅ Kibana: ${GREEN}configured${NC}"
+    echo ""
+    
+    # Step 2: Send a test message
+    echo -e "Sending test message..."
+    local test_response
+    test_response=$(curl -s --max-time 30 "http://localhost:$actual_backend_port/api/agent/chat" \
+        -H "Content-Type: application/json" \
+        -d '{"input": "Hello, please respond briefly."}' 2>&1)
+    
+    # Check for common errors in response
+    if echo "$test_response" | grep -q '"error"'; then
+        local error_msg=$(echo "$test_response" | grep -o '"message":"[^"]*"' | head -1 | cut -d'"' -f4)
+        echo ""
+        echo -e "${RED}❌ Agent Error${NC}"
+        echo -e "   $error_msg"
+        echo ""
+        
+        # Provide helpful guidance based on error
+        if echo "$test_response" | grep -qi "401\|unauthorized\|authenticate"; then
+            echo -e "${YELLOW}Likely cause:${NC} Invalid API Key"
+            echo -e "${YELLOW}Fix:${NC} Regenerate API key in Kibana and run ./setup.sh"
+        elif echo "$test_response" | grep -qi "not found"; then
+            echo -e "${YELLOW}Likely cause:${NC} Agent ID doesn't exist"
+            echo -e "${YELLOW}Fix:${NC} Run ./setup.sh to list and select valid agents"
+        elif echo "$test_response" | grep -qi "resolve\|connection\|connect"; then
+            echo -e "${YELLOW}Likely cause:${NC} Cannot reach Kibana"
+            echo -e "${YELLOW}Fix:${NC} Check KIBANA_URL in backend/.env"
+        fi
+        
+        echo ""
+        echo -e "See: ${BLUE}hive-mind/troubleshooting/AGENT_BUILDER_ERROR_REFERENCE.md${NC}"
+        exit 1
+    fi
+    
+    # Check for successful response (look for message_complete event)
+    if echo "$test_response" | grep -q "message_complete\|message_chunk"; then
+        echo -e "${GREEN}✅ Agent responded successfully!${NC}"
+        echo ""
+        
+        # Try to extract a preview of the response
+        local preview=$(echo "$test_response" | grep -o '"text_chunk":"[^"]*"' | head -3 | cut -d'"' -f4 | tr -d '\n')
+        if [ -n "$preview" ]; then
+            echo -e "${DIM}Response preview: ${preview:0:100}...${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Response received but format unexpected${NC}"
+        echo -e "${DIM}First 200 chars: ${test_response:0:200}${NC}"
+    fi
+    
+    echo ""
+    echo -e "${GREEN}✅ Agent Builder connection working!${NC}"
+}
+
+cmd_verify() {
+    echo -e "${BLUE}🔍 Verifying setup...${NC}"
+    echo ""
+    
+    local all_pass=true
+    
+    # Check 1: .setup-complete marker
+    if [ -f ".setup-complete" ]; then
+        echo -e "✅ Setup completed ($(grep timestamp .setup-complete | cut -d' ' -f2))"
+    else
+        echo -e "${RED}❌ Setup not complete${NC} - run ./setup.sh first"
+        all_pass=false
+    fi
+    
+    # Check 2: backend/.env exists
+    if [ -f "backend/.env" ]; then
+        echo -e "✅ Backend configuration exists"
+    else
+        echo -e "${RED}❌ Missing backend/.env${NC}"
+        all_pass=false
+    fi
+    
+    # Check 3: uv installed
+    if command -v uv &> /dev/null; then
+        echo -e "✅ uv installed"
+    else
+        echo -e "${RED}❌ Missing uv${NC}"
+        all_pass=false
+    fi
+    
+    # Check 4: node_modules
+    if [ -d "frontend/node_modules" ]; then
+        echo -e "✅ Frontend dependencies"
+    else
+        echo -e "${RED}❌ Missing frontend/node_modules${NC}"
+        all_pass=false
+    fi
+    
+    # Check 5: hive-mind submodule
+    if is_hive_mind_loaded; then
+        echo -e "✅ Hive-mind knowledge base"
+    else
+        echo -e "${YELLOW}⚠️  Hive-mind empty${NC} - run: git submodule update --init"
+    fi
+    
+    # Check 6: Backend import check
+    if command -v uv &> /dev/null; then
+        if (cd backend && uv run python -c "from app.main import app" > /dev/null 2>&1); then
+            echo -e "✅ Backend imports OK"
+        else
+            echo -e "${RED}❌ Backend import failed (missing dependencies?)${NC}"
+            echo -e "${DIM}   Run: cd backend && uv sync${NC}"
+            all_pass=false
+        fi
+    fi
+
+    # Check 7: If servers running, ping health
+    read_env_ports
+    local actual_backend_port=$BACKEND_PORT
+    if [ -f "$PID_DIR/backend.port" ]; then
+        actual_backend_port=$(cat "$PID_DIR/backend.port")
+    fi
+    
+    if is_running "$BACKEND_PID_FILE"; then
+        # Try to ping health endpoint
+        if curl -s --max-time 3 "http://localhost:$actual_backend_port/health" > /dev/null 2>&1; then
+            echo -e "✅ Backend health check passed"
+        else
+            echo -e "${YELLOW}⚠️  Backend running but health check failed${NC}"
+            if [ -f "$LOG_DIR/backend.log" ]; then
+                echo -e "${DIM}   Recent backend log:${NC}"
+                tail -5 "$LOG_DIR/backend.log" 2>/dev/null | while IFS= read -r line; do
+                    echo -e "${DIM}   ${line}${NC}"
+                done
+            fi
+        fi
+    else
+        echo -e "${DIM}ℹ️  Servers not running (start with ./dev start)${NC}"
+    fi
+    
+    echo ""
+    if [ "$all_pass" = true ]; then
+        echo -e "${GREEN}✅ All checks passed!${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Some checks failed${NC}"
+        echo -e "${DIM}   Run ./setup.sh to fix${NC}"
+        return 1
+    fi
+}
+
+cmd_use_ootb() {
+    echo -e "${BLUE}🔧 Configuring Shared OOTB Project...${NC}"
+    echo ""
+    
+    # Check if gh CLI is available
+    if ! command -v gh &> /dev/null; then
+        echo -e "${RED}❌ GitHub CLI (gh) is required${NC}"
+        echo ""
+        echo "Install with:"
+        echo "  macOS:   brew install gh"
+        echo "  Linux:   https://github.com/cli/cli/blob/trunk/docs/install_linux.md"
+        echo "  Windows: winget install GitHub.cli"
+        echo ""
+        echo "Then authenticate: gh auth login"
+        exit 1
+    fi
+    
+    # Check if authenticated
+    if ! gh auth status &> /dev/null; then
+        echo -e "${RED}❌ Not authenticated with GitHub${NC}"
+        echo ""
+        echo "Run: gh auth login"
+        exit 1
+    fi
+    
+    echo -e "Fetching OOTB credentials from GitHub..."
+    
+    # Fetch variables from GitHub
+    local es_url kibana_url api_key
+    es_url=$(gh variable get OOTB_ELASTICSEARCH_URL 2>/dev/null) || {
+        echo -e "${RED}❌ Could not fetch OOTB_ELASTICSEARCH_URL${NC}"
+        echo "   Make sure you have access to the elastic/elastic-demo-starter repository."
+        echo "   Repository variables are only visible to collaborators with read access."
+        echo ""
+        echo "   See: docs/SHARED_SERVERLESS_PROJECT.md for manual setup instructions."
+        exit 1
+    }
+    
+    kibana_url=$(gh variable get OOTB_KIBANA_URL 2>/dev/null) || {
+        echo -e "${RED}❌ Could not fetch OOTB_KIBANA_URL${NC}"
+        exit 1
+    }
+    
+    api_key=$(gh variable get OOTB_READONLY_API_KEY 2>/dev/null) || {
+        echo -e "${RED}❌ Could not fetch OOTB_READONLY_API_KEY${NC}"
+        exit 1
+    }
+    
+    echo -e "${GREEN}✅ Credentials fetched${NC}"
+    
+    # Create or update backend/.env
+    local env_file="backend/.env"
+    
+    if [ ! -f "$env_file" ]; then
+        # Create from example if it exists
+        if [ -f "backend/.env.example" ]; then
+            cp "backend/.env.example" "$env_file"
+            echo -e "Created $env_file from template"
+        else
+            touch "$env_file"
+            echo -e "Created $env_file"
+        fi
+    fi
+    
+    # Update the values
+    update_env_value "ELASTICSEARCH_URL" "$es_url"
+    update_env_value "ELASTIC_API_KEY" "$api_key"
+    update_env_value "KIBANA_URL" "$kibana_url"
+    
+    echo ""
+    echo -e "${GREEN}✅ Configured backend/.env with OOTB credentials${NC}"
+    echo ""
+    echo -e "   Elasticsearch: ${BLUE}$es_url${NC}"
+    echo -e "   Kibana:        ${BLUE}$kibana_url${NC}"
+    echo -e "   API Key:       ${DIM}(read-only, hidden)${NC}"
+    echo ""
+    echo -e "Available indices:"
+    echo -e "   • ootb-products  (200 products, ELSER + jina)"
+    echo -e "   • ootb-knowledge (150 docs, ELSER + jina)"
+    echo -e "   • ootb-support   (150 tickets, ELSER + jina)"
+    echo -e "   • ootb-stores    (100 stores, ELSER + jina + geo)"
+    echo ""
+    echo -e "Available agents:"
+    echo -e "   • ootb-product-search"
+    echo -e "   • ootb-knowledge-base"
+    echo -e "   • ootb-support-analyst"
+    echo -e "   • ootb-store-finder"
+    echo ""
+    echo -e "Next steps:"
+    echo -e "   1. Set AGENT_ID in backend/.env (e.g., ootb-product-search)"
+    echo -e "   2. Run ${BLUE}./dev start${NC}"
+    echo ""
+    echo -e "See ${BLUE}docs/SHARED_SERVERLESS_PROJECT.md${NC} for full documentation."
+}
+
+cmd_verify_template() {
+    echo -e "${BLUE}🔍 Verifying template integrity...${NC}"
+    echo ""
+
+    local python_cmd="python3"
+    if [ -f "backend/.venv/bin/python" ]; then
+        python_cmd="backend/.venv/bin/python"
+    elif [ -f "backend/venv/bin/python" ]; then
+        python_cmd="backend/venv/bin/python"
+    elif command -v uv &> /dev/null; then
+        python_cmd="uv run --directory backend python"
+    fi
+
+    $python_cmd scripts/verify-template.py "$@"
+}
+
+cmd_session() {
+    read_env_ports
+
+    local actual_backend_port=$BACKEND_PORT
+    local actual_frontend_port=$FRONTEND_PORT
+    if [ -f "$PID_DIR/backend.port" ]; then
+        actual_backend_port=$(cat "$PID_DIR/backend.port")
+    fi
+    if [ -f "$PID_DIR/frontend.port" ]; then
+        actual_frontend_port=$(cat "$PID_DIR/frontend.port")
+    fi
+
+    echo -e "${BLUE}Session Summary${NC}"
+    echo -e "${BLUE}===============${NC}"
+    echo ""
+
+    # --- Environment ---
+    echo -e "${BLUE}Environment${NC}"
+
+    # Setup
+    if [ -f ".setup-complete" ]; then
+        local ts=$(grep timestamp .setup-complete 2>/dev/null | cut -d' ' -f2)
+        echo -e "  Setup:          ${GREEN}✅ Complete${NC} ${DIM}($ts)${NC}"
+    else
+        echo -e "  Setup:          ${RED}❌ Not complete${NC} — run ./setup.sh"
+    fi
+
+    # Hive Mind
+    if is_hive_mind_loaded; then
+        echo -e "  Hive Mind:      ${GREEN}✅ Loaded${NC}"
+    elif [ -d "hive-mind" ]; then
+        echo -e "  Hive Mind:      ${YELLOW}⚠️  Empty${NC} — run: git submodule update --init"
+    else
+        echo -e "  Hive Mind:      ${RED}❌ Missing${NC}"
+    fi
+
+    # Beads
+    if [ -d ".beads" ]; then
+        echo -e "  Issue Tracker:  ${GREEN}✅ Beads configured${NC}"
+    else
+        echo -e "  Issue Tracker:  ${DIM}Not configured${NC}"
+    fi
+
+    # Browser tools
+    if [ -f ".mcp.json" ] && grep -q '"playwright"' .mcp.json 2>/dev/null; then
+        echo -e "  Browser Tools:  ${GREEN}✅ Playwright MCP${NC}"
+    else
+        echo -e "  Browser Tools:  ${DIM}Not configured${NC}"
+    fi
+
+    # OpenSpec CLI (optional — for spec-driven demo builds)
+    if command -v openspec &>/dev/null; then
+        local os_version=$(openspec --version 2>/dev/null || echo "unknown")
+        echo -e "  OpenSpec CLI:   ${GREEN}✅ Installed${NC} ${DIM}(${os_version})${NC}"
+    elif [ -d "openspec/templates" ]; then
+        echo -e "  OpenSpec CLI:   ${YELLOW}⚠️  Not installed${NC} — run: npm i -g @fission-ai/openspec"
+    fi
+
+    echo ""
+
+    # --- Servers ---
+    echo -e "${BLUE}Servers${NC}"
+
+    local backend_running=false
+    local frontend_running=false
+
+    if is_running "$BACKEND_PID_FILE"; then
+        echo -e "  Backend:        ${GREEN}● Running${NC} (port $actual_backend_port)"
+        backend_running=true
+    else
+        echo -e "  Backend:        ${RED}○ Stopped${NC}"
+    fi
+
+    if is_running "$FRONTEND_PID_FILE"; then
+        echo -e "  Frontend:       ${GREEN}● Running${NC} (port $actual_frontend_port)"
+        frontend_running=true
+    else
+        # Check if port is listening anyway (e.g. started outside ./dev)
+        if lsof -i:"$actual_frontend_port" > /dev/null 2>&1; then
+            echo -e "  Frontend:       ${YELLOW}● Port $actual_frontend_port in use${NC} (not managed by ./dev)"
+            frontend_running=true
+        else
+            echo -e "  Frontend:       ${RED}○ Stopped${NC}"
+        fi
+    fi
+
+    if [ "$backend_running" = true ]; then
+        local health_ok=false
+        curl -s --max-time 3 "http://localhost:$actual_backend_port/health" > /dev/null 2>&1 && health_ok=true
+        if [ "$health_ok" = true ]; then
+            echo -e "  Health Check:   ${GREEN}✅ OK${NC}"
+        else
+            echo -e "  Health Check:   ${YELLOW}⚠️  Not responding${NC}"
+            if [ -f "$LOG_DIR/backend.log" ]; then
+                echo -e "  ${DIM}Recent backend log:${NC}"
+                tail -5 "$LOG_DIR/backend.log" 2>/dev/null | while IFS= read -r line; do
+                    echo -e "  ${DIM}  ${line}${NC}"
+                done
+            fi
+        fi
+    fi
+
+    echo ""
+
+    # --- Config ---
+    echo -e "${BLUE}Config${NC} ${DIM}(backend/.env)${NC}"
+
+    if [ -f "backend/.env" ]; then
+        local es_url=$(grep -E '^ELASTICSEARCH_URL=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local kibana_url=$(grep -E '^KIBANA_URL=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local search_index=$(grep -E '^SEARCH_INDEX=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local agent_id=$(grep -E '^AGENT_ID=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local api_key=$(grep -E '^ELASTIC_API_KEY=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local otel_endpoint=$(grep -E '^OTEL_EXPORTER_OTLP_ENDPOINT=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+        local llm_proxy=$(grep -E '^LLM_PROXY_URL=' backend/.env 2>/dev/null | cut -d'=' -f2-)
+
+        echo -e "  Elasticsearch:  ${es_url:-(not set)}"
+        echo -e "  Kibana:         ${kibana_url:-(not set)}"
+        echo -e "  Search Index:   ${search_index:-products}"
+        if [ -n "$agent_id" ]; then
+            echo -e "  Agent Mode:     ${GREEN}Configured default${NC}"
+            echo -e "  Agent ID:       ${GREEN}$agent_id${NC}"
+        else
+            local explicit_agent_mode=false
+            if [ "$backend_running" = true ]; then
+                local agents_response
+                agents_response=$(curl -s --max-time 4 "http://localhost:$actual_backend_port/api/agent/agents" 2>/dev/null || true)
+                local available_agents=0
+                available_agents=$(echo "$agents_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('results', [])) if isinstance(d, dict) else 0)" 2>/dev/null || echo 0)
+                if [ -n "$available_agents" ] && [ "$available_agents" -gt 0 ]; then
+                    explicit_agent_mode=true
+                fi
+            fi
+            if [ "$explicit_agent_mode" = true ]; then
+                echo -e "  Agent Mode:     ${YELLOW}Explicit agent_id required${NC}"
+                echo -e "  Agent ID:       ${YELLOW}(not set in .env)${NC}"
+            else
+                echo -e "  Agent Mode:     ${YELLOW}Not ready${NC}"
+                echo -e "  Agent ID:       ${YELLOW}(not set)${NC}"
+            fi
+        fi
+        if [ -n "$api_key" ]; then
+            echo -e "  API Key:        ${GREEN}✅ Set${NC} ${DIM}(${api_key:0:8}...)${NC}"
+        else
+            echo -e "  API Key:        ${RED}❌ Missing${NC}"
+        fi
+        if [ -n "$otel_endpoint" ]; then
+            echo -e "  OTel:           ${GREEN}✅ Configured${NC}"
+        else
+            echo -e "  OTel:           ${DIM}Not configured${NC}"
+        fi
+        if [ -n "$llm_proxy" ]; then
+            echo -e "  LLM Proxy:      ${GREEN}✅ Configured${NC}"
+        else
+            echo -e "  LLM Proxy:      ${DIM}Not configured${NC}"
+        fi
+    else
+        echo -e "  ${RED}❌ backend/.env not found${NC}"
+    fi
+
+    echo ""
+
+    # --- Data ---
+    if [ "$backend_running" = true ]; then
+        echo -e "${BLUE}Data${NC}"
+        local fields_response
+        fields_response=$(curl -s --max-time 5 "http://localhost:$actual_backend_port/api/search/fields" 2>/dev/null || true)
+        if [ -n "$fields_response" ] && [ "$fields_response" != "null" ]; then
+            local field_count=$(echo "$fields_response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('fields',d) if isinstance(d,dict) else d))" 2>/dev/null)
+            if [ -n "$field_count" ] && [ "$field_count" != "0" ]; then
+                echo -e "  Search Fields:  ${GREEN}$field_count fields available${NC}"
+            else
+                echo -e "  Search Fields:  ${YELLOW}⚠️  Index may not exist yet${NC}"
+            fi
+        else
+            echo -e "  Search Fields:  ${YELLOW}⚠️  Could not query${NC}"
+        fi
+        echo ""
+    fi
+
+    # --- Customer Context ---
+    echo -e "${BLUE}Customer Context${NC}"
+    if [ -d "customer-context" ]; then
+        local has_files=false
+        for subdir in emails notes requirements research; do
+            local dir="customer-context/$subdir"
+            if [ -d "$dir" ]; then
+                # Count files (excluding .gitkeep)
+                local count=$(find "$dir" -type f ! -name '.gitkeep' 2>/dev/null | wc -l | tr -d ' ')
+                if [ "$count" -gt 0 ]; then
+                    echo -e "  $subdir/:  ${GREEN}$count file(s)${NC}"
+                    has_files=true
+                else
+                    echo -e "  $subdir/:  ${DIM}empty${NC}"
+                fi
+            fi
+        done
+        if [ "$has_files" = false ]; then
+            echo -e "  ${DIM}No customer materials — will use vertical-level discovery${NC}"
+        fi
+    else
+        echo -e "  ${DIM}No customer-context/ directory${NC}"
+    fi
+
+    echo ""
+
+    # --- Session Type ---
+    echo -e "${BLUE}Session${NC}"
+
+    local session_type="new"
+
+    # Check beads for open issues (signal of prior work)
+    local ready_count=0
+    local in_progress=0
+    local blocked_count=0
+    if [ -d ".beads" ] && command -v bd &> /dev/null; then
+        ready_count=$(count_bd_issue_lines bd ready)
+        in_progress=$(count_bd_issue_lines bd list --status in_progress)
+        blocked_count=$(count_bd_issue_lines bd blocked)
+    fi
+
+    # Determine session type
+    if [ -f "DEMO_PLAN.md" ]; then
+        session_type="returning"
+        echo -e "  Demo Plan:      ${GREEN}✅ Found${NC} (returning session)"
+    elif [ "$((ready_count + in_progress + blocked_count))" -gt 0 ]; then
+        session_type="returning"
+        echo -e "  Demo Plan:      ${DIM}Not found${NC}"
+        echo -e "  Session:        ${GREEN}Returning${NC} (open beads issues detected)"
+    else
+        echo -e "  Demo Plan:      ${DIM}Not found${NC} (new session)"
+    fi
+
+    # Show beads status if available
+    if [ -d ".beads" ] && command -v bd &> /dev/null; then
+        echo -e "  Ready Issues:   $ready_count"
+        echo -e "  In Progress:    $in_progress"
+        echo -e "  Blocked:        $blocked_count"
+    fi
+
+    echo ""
+}
+
+cmd_help() {
+    read_env_ports
+
+    echo "Elastic Demo Starter - Dev Server Manager"
+    echo ""
+    echo "Usage: ./dev <command>"
+    echo ""
+    echo "Commands:"
+    echo "  start            Start servers in background (auto-finds available ports)"
+    echo "  stop             Stop all servers"
+    echo "  restart          Restart (only needed after .env or dependency changes)"
+    echo "  status           Show if running, ports, PIDs"
+    echo "  verify           Quick setup verification (checks .env, venv, etc.)"
+    echo "  verify-template  Structural integrity checks (routes, contracts, builds)"
+    echo "  test-agent       Test Agent Builder connection (sends test message)"
+    echo "  session          Full session summary (environment, config, data, context)"
+    echo "  verify-search    Verify search endpoint returns results and aggregations"
+    echo "  test-search      Test semantic + keyword search quality"
+    echo "  logs             Tail server logs (follows, use Ctrl+C to exit)"
+    echo "  logs-snapshot    Show recent logs and exit (default: 50 lines)"
+    echo "                   Usage: ./dev logs-snapshot [num_lines]"
+    echo "  open             Open browser to frontend"
+    echo "  use-ootb         Configure shared OOTB project (fetches from GitHub)"
+    echo ""
+    echo "Both servers auto-reload on code changes - no restart needed!"
+    echo ""
+    echo "Configured Ports (from backend/.env):"
+    echo "  Backend:  $BACKEND_PORT"
+    echo "  Frontend: $FRONTEND_PORT"
+    echo ""
+    echo "If these ports are in use, available ports will be found automatically."
+    echo ""
+    echo "Typical workflow:"
+    echo "  ./dev start        # Start once"
+    echo "  ./dev open         # Open browser"
+    echo "  # ... edit code, it auto-reloads ..."
+    echo "  ./dev stop         # Done for the day"
+}
+
+verify_search() {
+    echo -e "${BLUE}Verifying search endpoint...${NC}"
+
+    if [ ! -f "$PID_DIR/backend.port" ]; then
+        echo -e "${RED}Backend not running. Run ./dev start first.${NC}"
+        exit 1
+    fi
+
+    local port=$(cat "$PID_DIR/backend.port")
+    local response
+
+    # Test empty query (match_all)
+    local curl_status=0
+    response=$(curl -s -X POST "http://localhost:${port}/api/search" \
+        -H 'Content-Type: application/json' \
+        -d '{"query":""}' 2>&1) || curl_status=$?
+
+    if [ "$curl_status" -ne 0 ]; then
+        echo -e "${RED}❌ Search endpoint unreachable${NC}"
+        exit 1
+    fi
+
+    # Check total results
+    local total=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null)
+    if [ -z "$total" ] || [ "$total" = "0" ]; then
+        echo -e "${RED}❌ No results returned (total=0). Is data indexed?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Search returns results (total=${total})${NC}"
+
+    # Check aggregations
+    local agg_count=$(echo "$response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for v in d.get('aggregations',{}).values() if v))" 2>/dev/null)
+    if [ -z "$agg_count" ] || [ "$agg_count" = "0" ]; then
+        echo -e "${YELLOW}⚠️  No aggregations returned. Check facet configuration.${NC}"
+    else
+        local agg_names=$(echo "$response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(', '.join(d.get('aggregations',{}).keys()))" 2>/dev/null)
+        echo -e "${GREEN}✅ Aggregations populated (${agg_count} facets: ${agg_names})${NC}"
+    fi
+
+    echo -e "${GREEN}Search verification passed.${NC}"
+}
+
+test_search() {
+    echo -e "${BLUE}Testing search quality (semantic + keyword)...${NC}"
+
+    if [ ! -f "$PID_DIR/backend.port" ]; then
+        echo -e "${RED}Backend not running. Run ./dev start first.${NC}"
+        exit 1
+    fi
+
+    local port=$(cat "$PID_DIR/backend.port")
+    local passed=0
+    local failed=0
+
+    # Test 1: Semantic query
+    echo -e "\n${BLUE}Test 1: Semantic search${NC}"
+    echo -e "${DIM}  Query: \"vibration at high speed\"${NC}"
+    local sem_response
+    sem_response=$(curl -s -X POST "http://localhost:${port}/api/search" \
+        -H 'Content-Type: application/json' \
+        -d '{"query":"vibration at high speed","page_size":3}') || true
+
+    local sem_total=$(echo "$sem_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null)
+    local sem_top=$(echo "$sem_response" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+hits=d.get('hits',[])
+if hits:
+    h=hits[0]
+    src=h.get('source',{})
+    title=src.get('fault_id',src.get('title','(no title)'))
+    print(f'  Top: {title} (score={h.get(\"score\",0):.2f})')
+else:
+    print('  No hits')
+" 2>/dev/null)
+
+    if [ -n "$sem_total" ] && [ "$sem_total" != "0" ]; then
+        echo -e "${GREEN}  ✅ Semantic search returned ${sem_total} results${NC}"
+        echo -e "${DIM}${sem_top}${NC}"
+        passed=$((passed + 1))
+    else
+        echo -e "${RED}  ❌ Semantic search returned 0 results${NC}"
+        failed=$((failed + 1))
+    fi
+
+    # Test 2: Keyword query (part number fragment)
+    echo -e "\n${BLUE}Test 2: Keyword search${NC}"
+    echo -e "${DIM}  Query: \"ECS-OZONE\"${NC}"
+    local kw_response
+    kw_response=$(curl -s -X POST "http://localhost:${port}/api/search" \
+        -H 'Content-Type: application/json' \
+        -d '{"query":"ECS-OZONE","page_size":3}') || true
+
+    local kw_total=$(echo "$kw_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null)
+    local kw_top=$(echo "$kw_response" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+hits=d.get('hits',[])
+if hits:
+    h=hits[0]
+    src=h.get('source',{})
+    title=src.get('fault_id',src.get('title','(no title)'))
+    print(f'  Top: {title} (score={h.get(\"score\",0):.2f})')
+else:
+    print('  No hits')
+" 2>/dev/null)
+
+    if [ -n "$kw_total" ] && [ "$kw_total" != "0" ]; then
+        echo -e "${GREEN}  ✅ Keyword search returned ${kw_total} results${NC}"
+        echo -e "${DIM}${kw_top}${NC}"
+        passed=$((passed + 1))
+    else
+        echo -e "${RED}  ❌ Keyword search returned 0 results${NC}"
+        failed=$((failed + 1))
+    fi
+
+    # Summary
+    echo -e "\n${BLUE}Results: ${passed} passed, ${failed} failed${NC}"
+    if [ "$failed" -gt 0 ]; then
+        exit 1
+    fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+case "${1:-help}" in
+    start)   cmd_start ;;
+    stop)    cmd_stop ;;
+    restart) cmd_restart ;;
+    status)  cmd_status ;;
+    verify)  cmd_verify ;;
+    verify-template) shift; cmd_verify_template "$@" ;;
+    test-agent) cmd_test_agent ;;
+    verify-search) verify_search ;;
+    test-search) test_search ;;
+    logs)    cmd_logs ;;
+    logs-snapshot) cmd_logs_snapshot "${2:-50}" ;;
+    open)    cmd_open ;;
+    use-ootb) cmd_use_ootb ;;
+    session) cmd_session ;;
+    help|--help|-h) cmd_help ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        echo ""
+        cmd_help
+        exit 1
+        ;;
+esac

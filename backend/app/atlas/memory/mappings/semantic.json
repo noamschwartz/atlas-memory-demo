@@ -1,0 +1,25 @@
+{
+  "mappings": {
+    "properties": {
+      "user_id":      { "type": "keyword" },
+      "fact_type":    { "type": "keyword" },
+      "text": {
+        "type": "text",
+        "copy_to": "semantic_content"
+      },
+      "semantic_content": {
+        "type": "semantic_text",
+        "inference_id": ".jina-embeddings-v5-text-small"
+      },
+      "confidence":   { "type": "float" },
+      "source_episodes": { "type": "keyword" },
+      "created_at":   { "type": "date" },
+      "last_used_at": { "type": "date" },
+      "use_count":    { "type": "integer" },
+      "superseded_by":{ "type": "keyword" },
+      "superseded_at":{ "type": "date" },
+      "supersedes":   { "type": "keyword" },
+      "metadata":     { "type": "flattened" }
+    }
+  }
+}

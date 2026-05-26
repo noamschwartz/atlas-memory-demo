@@ -1,0 +1,38 @@
+# Nginx container for Cloud Run sidecar deployment
+# Serves React frontend and proxies /api to FastAPI sidecar
+#
+# Build with:
+#   docker build -f deploy/Dockerfile.nginx -t my-app-nginx \
+#       --build-arg VITE_BASE_PATH=/my-app/ \
+#       .
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY frontend/ ./
+
+# Build arguments - customize for your deployment path
+ARG VITE_BASE_PATH=/
+ARG VITE_OTEL_ENDPOINT=http://localhost:4318
+ARG VITE_API_URL=
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+ENV VITE_OTEL_ENDPOINT=$VITE_OTEL_ENDPOINT
+ENV VITE_OTEL_ENABLED=true
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN yarn build
+
+# Final nginx image
+FROM nginx:alpine
+
+# Copy built frontend
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+# Copy nginx config for sidecar setup
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]

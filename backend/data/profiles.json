@@ -1,0 +1,34 @@
+[
+  {
+    "id": "alex",
+    "name": "Alex Demo",
+    "avatar": "",
+    "role": "Demo Persona",
+    "tagline": "A sample persona for testing the profile system",
+    "stats": [
+      { "label": "Member Since", "value": "2024" },
+      { "label": "Searches", "value": "142" },
+      { "label": "Saved Items", "value": "28" }
+    ],
+    "attributes": [
+      {
+        "title": "Preferences",
+        "items": [
+          { "label": "Region", "value": "London, UK" },
+          { "label": "Language", "value": "English" }
+        ]
+      }
+    ],
+    "tags": [
+      {
+        "title": "Interests",
+        "values": ["Technology", "Sustainability", "Innovation"]
+      }
+    ],
+    "searchPersonalization": {
+      "preferredCategories": [],
+      "preferredBrands": [],
+      "boosts": {}
+    }
+  }
+]

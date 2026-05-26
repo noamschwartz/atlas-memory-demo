@@ -1,0 +1,35 @@
+# Simplified Cloud Run Dockerfile - Just FastAPI
+# No Nginx, no Supervisor - for debugging startup issues
+#
+# Use this to verify your FastAPI backend starts correctly
+# before adding the complexity of the full stack.
+#
+# Build with:
+#   docker build -f Dockerfile.cloudrun.simple -t my-app-debug --platform linux/amd64 .
+#
+# Run locally:
+#   docker run -p 8080:8080 \
+#       -e ELASTICSEARCH_URL="https://your-cluster.es.cloud.com" \
+#       -e ELASTIC_API_KEY="your-key" \
+#       my-app-debug
+
+FROM python:3.11-slim
+
+WORKDIR /app/backend
+
+# Install dependencies
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY backend/app ./app
+COPY backend/run.py .
+
+# Environment
+ENV PYTHONPATH=/app/backend
+ENV PORT=8080
+
+EXPOSE 8080
+
+# Run uvicorn directly
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,0 +1,234 @@
+# Banking / Finance Event Generator Configuration
+# Used by: BankingEventGenerator (banking_event_generator.py)
+#
+# Generates realistic banking transaction, fraud, login, account change,
+# and wire transfer events with configurable anomaly injection.
+
+seed: 42
+time_range_hours: 168  # 1 week
+customer_count: 200
+
+# --- Event Types ---
+# weight: probability of this event type being selected (must sum to ~1.0)
+# severities: possible severity levels for normal events
+event_types:
+  transaction:
+    weight: 0.35
+    severities: ["info"]
+  fraud_alert:
+    weight: 0.10
+    severities: ["warning", "error", "critical"]
+  login:
+    weight: 0.25
+    severities: ["info"]
+  account_change:
+    weight: 0.15
+    severities: ["info", "warning"]
+  wire_transfer:
+    weight: 0.15
+    severities: ["info", "warning"]
+
+# --- Anomaly Configuration ---
+anomaly_config:
+  percentage: 5  # 5% of events are anomalous
+  types:
+    - unusual_amount
+    - velocity_breach
+    - geo_anomaly
+    - dormant_reactivation
+
+# --- Field Value Pools ---
+
+# Transaction types
+transaction_types:
+  - transfer
+  - payment
+  - withdrawal
+  - deposit
+  - refund
+
+# Currencies (ISO 4217)
+currencies:
+  - code: USD
+    weight: 0.40
+  - code: EUR
+    weight: 0.20
+  - code: GBP
+    weight: 0.15
+  - code: JPY
+    weight: 0.05
+  - code: CHF
+    weight: 0.05
+  - code: CAD
+    weight: 0.05
+  - code: AUD
+    weight: 0.05
+  - code: SGD
+    weight: 0.05
+
+# Merchant categories (MCC-inspired)
+merchant_categories:
+  - category: "Grocery Stores"
+    merchants: ["Whole Foods", "Trader Joe's", "Kroger", "Safeway", "Aldi"]
+    avg_amount: 85.00
+    std_amount: 45.00
+  - category: "Restaurants"
+    merchants: ["Starbucks", "Chipotle", "Olive Garden", "Panera Bread", "Five Guys"]
+    avg_amount: 32.00
+    std_amount: 18.00
+  - category: "Gas Stations"
+    merchants: ["Shell", "BP", "ExxonMobil", "Chevron", "Sunoco"]
+    avg_amount: 55.00
+    std_amount: 20.00
+  - category: "Online Retail"
+    merchants: ["Amazon", "eBay", "Walmart.com", "Target.com", "Best Buy"]
+    avg_amount: 120.00
+    std_amount: 85.00
+  - category: "Utilities"
+    merchants: ["Electric Co.", "Water Authority", "Gas Utility", "Internet Provider", "Mobile Carrier"]
+    avg_amount: 150.00
+    std_amount: 60.00
+  - category: "Travel"
+    merchants: ["United Airlines", "Marriott Hotels", "Hertz", "Delta Airlines", "Hilton"]
+    avg_amount: 450.00
+    std_amount: 300.00
+  - category: "Healthcare"
+    merchants: ["CVS Pharmacy", "Walgreens", "Hospital Network", "Dental Office", "Vision Center"]
+    avg_amount: 95.00
+    std_amount: 70.00
+  - category: "Insurance"
+    merchants: ["State Farm", "Allstate", "Progressive", "Geico", "MetLife"]
+    avg_amount: 200.00
+    std_amount: 80.00
+
+# Fraud alert reasons
+fraud_reasons:
+  - "Card not present — high risk merchant"
+  - "Transaction amount exceeds daily limit"
+  - "Multiple transactions in short timeframe"
+  - "Transaction from blacklisted country"
+  - "Unusual spending pattern detected"
+  - "Card used in different country within 2 hours"
+  - "Repeated declined attempts followed by success"
+  - "First transaction on dormant account"
+  - "Beneficiary on watchlist"
+  - "Amount pattern matches known fraud ring"
+
+# Login channels
+login_channels:
+  - channel: web
+    weight: 0.40
+  - channel: mobile
+    weight: 0.35
+  - channel: atm
+    weight: 0.15
+  - channel: phone_banking
+    weight: 0.10
+
+# Account change types
+account_change_types:
+  - type: address
+    weight: 0.30
+  - type: phone
+    weight: 0.25
+  - type: email
+    weight: 0.20
+  - type: password
+    weight: 0.20
+  - type: beneficiary_add
+    weight: 0.05
+
+# Wire transfer destination countries (ISO 3166-1 alpha-2)
+wire_destinations:
+  - country: US
+    weight: 0.25
+    high_risk: false
+  - country: GB
+    weight: 0.15
+    high_risk: false
+  - country: DE
+    weight: 0.10
+    high_risk: false
+  - country: CH
+    weight: 0.08
+    high_risk: false
+  - country: SG
+    weight: 0.07
+    high_risk: false
+  - country: JP
+    weight: 0.06
+    high_risk: false
+  - country: CA
+    weight: 0.06
+    high_risk: false
+  - country: AE
+    weight: 0.05
+    high_risk: false
+  - country: HK
+    weight: 0.05
+    high_risk: false
+  - country: CN
+    weight: 0.04
+    high_risk: true
+  - country: RU
+    weight: 0.03
+    high_risk: true
+  - country: NG
+    weight: 0.03
+    high_risk: true
+  - country: PK
+    weight: 0.03
+    high_risk: true
+
+# Wire transfer amount distribution
+wire_amount:
+  min: 500.00
+  max: 500000.00
+  mean: 25000.00
+  std: 40000.00
+  high_value_threshold: 50000.00
+
+# Bank names for inter-bank transfers
+banks:
+  - "JPMorgan Chase"
+  - "Bank of America"
+  - "Wells Fargo"
+  - "Citibank"
+  - "Goldman Sachs"
+  - "Morgan Stanley"
+  - "HSBC"
+  - "Barclays"
+  - "Deutsche Bank"
+  - "UBS"
+  - "BNP Paribas"
+  - "Credit Suisse"
+  - "Standard Chartered"
+  - "ING Group"
+  - "Santander"
+
+# IP ranges for login events
+ip_ranges:
+  corporate: ["10.0.0.0/8", "172.16.0.0/12"]
+  vpn: ["198.51.100.0/24"]
+  public: ["203.0.113.0/24", "192.0.2.0/24"]
+
+# Geographic regions for geo-based anomaly detection
+regions:
+  - name: "US-East"
+    weight: 0.30
+  - name: "US-West"
+    weight: 0.20
+  - name: "EU-West"
+    weight: 0.15
+  - name: "EU-Central"
+    weight: 0.10
+  - name: "APAC-East"
+    weight: 0.10
+  - name: "APAC-South"
+    weight: 0.05
+  - name: "Middle East"
+    weight: 0.05
+  - name: "Africa"
+    weight: 0.03
+  - name: "South America"
+    weight: 0.02
