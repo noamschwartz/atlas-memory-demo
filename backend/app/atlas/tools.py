@@ -64,6 +64,19 @@ def tool_schemas() -> list[dict[str, Any]]:
                             ),
                             "default": False,
                         },
+                        "include_superseded": {
+                            "type": "boolean",
+                            "description": (
+                                "Include soft-superseded semantic facts in "
+                                "the results (e.g. old addresses, prior "
+                                "preferences the customer has since "
+                                "contradicted). Default false. Set true when "
+                                "the customer asks a retrospective question "
+                                "(\"places I've lived\", \"fixes we've "
+                                "tried\")."
+                            ),
+                            "default": False,
+                        },
                     },
                     "required": ["query"],
                 },
@@ -175,28 +188,33 @@ def dispatch(
             memory_types=arguments.get("memory_types"),
             k=int(arguments.get("k", 10)),
             include_catalog=bool(arguments.get("include_catalog", False)),
+            include_superseded=bool(arguments.get("include_superseded", False)),
             update_stats=True,
             stats_es=stats_es,
         )
-        # Trim payload going back to the LLM.
-        compact = [
-            {
+        # Trim payload going back to the LLM. When include_superseded is set,
+        # surface superseded_at / superseded_by so the agent can distinguish
+        # archived state from current state in its reply.
+        compact = []
+        for h in hits:
+            src = h["source"]
+            item = {
                 "id": h["id"],
                 "memory_type": h["memory_type"],
                 "rank": h["rank"],
                 "score": h["score"],
-                "text": h["source"].get("text") or h["source"].get("trigger_text", ""),
-                "fact_type": h["source"].get("fact_type"),
+                "text": src.get("text") or src.get("trigger_text", ""),
+                "fact_type": src.get("fact_type"),
                 # Anchor the memory in time so the agent can answer "when" questions.
                 # Episodic uses the event timestamp; semantic and procedural fall
                 # back to the doc's creation time.
-                "timestamp": (
-                    h["source"].get("timestamp")
-                    or h["source"].get("created_at")
-                ),
+                "timestamp": src.get("timestamp") or src.get("created_at"),
             }
-            for h in hits
-        ]
+            if src.get("superseded_at"):
+                item["superseded_at"] = src["superseded_at"]
+            if src.get("superseded_by"):
+                item["superseded_by"] = src["superseded_by"]
+            compact.append(item)
         return {"hits": compact, "count": len(compact)}
 
     if name == "write_memory":

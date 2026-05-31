@@ -275,6 +275,7 @@ def _hybrid_retriever(
     user_id: str | None,
     k: int,
     include_catalog: bool = False,
+    include_superseded: bool = False,
     text_leg_on: bool = True,
     semantic_leg_on: bool = True,
 ) -> dict[str, Any]:
@@ -286,6 +287,9 @@ def _hybrid_retriever(
 
     When `include_catalog` is True, the user_id filter is widened to include
     the shared catalog index (whose docs lack `user_id`).
+
+    When `include_superseded` is True, the soft-supersession filter is dropped
+    so retrospective queries ("places I've lived") can see archived facts.
 
     `text_leg_on` / `semantic_leg_on` allow disabling either leg for ablation.
     With only one leg the RRF wrapper is dropped — the single retriever is
@@ -301,11 +305,13 @@ def _hybrid_retriever(
     else:
         base_filter = []
 
-    # Hide soft-superseded semantic facts from results. Other indices don't
-    # have this field, so the clause is a no-op for them.
-    base_filter = base_filter + [
-        {"bool": {"must_not": {"exists": {"field": "superseded_by"}}}}
-    ]
+    # Hide soft-superseded semantic facts from results unless include_superseded
+    # is set (e.g. for retrospective queries). Other indices don't have this
+    # field, so the clause is a no-op for them.
+    if not include_superseded:
+        base_filter = base_filter + [
+            {"bool": {"must_not": {"exists": {"field": "superseded_by"}}}}
+        ]
 
     text_leg: dict[str, Any] = {
         "standard": {
@@ -496,6 +502,7 @@ def _rrf_fetch(
     user_id: str | None,
     include_catalog: bool,
     fetch_k: int,
+    include_superseded: bool = False,
     text_leg_on: bool = True,
     semantic_leg_on: bool = True,
 ) -> list[dict[str, Any]]:
@@ -505,6 +512,7 @@ def _rrf_fetch(
         "size": fetch_k,
         "retriever": _hybrid_retriever(
             query, user_id, fetch_k, include_catalog,
+            include_superseded=include_superseded,
             text_leg_on=text_leg_on, semantic_leg_on=semantic_leg_on,
         ),
         "_source": {"excludes": ["semantic_content"]},
@@ -533,6 +541,7 @@ def recall_memory(
     memory_types: Iterable[MemoryType] | None = None,
     k: int = 10,
     include_catalog: bool = False,
+    include_superseded: bool = False,
     update_stats: bool = False,
     stats_es: Elasticsearch | None = None,
     rerank: bool = True,
@@ -552,6 +561,11 @@ def recall_memory(
     When `include_catalog` is True, the shared `atlas_catalog` index is
     included in the retrieval target. Catalog docs are user-agnostic, so
     their hits will surface alongside per-user memory.
+
+    When `include_superseded` is True, soft-superseded semantic facts are not
+    filtered out. Use for retrospective queries ("places I've lived", "fixes
+    we've tried before") where prior state is the answer. Default False so
+    live conversations see only current state.
 
     When `update_stats` is True, the FINAL top-K (post-rerank) get their
     `last_used_at` and `use_count` bumped, biasing future recalls toward
@@ -583,6 +597,7 @@ def recall_memory(
         indices=indices,
         user_id=user_id,
         include_catalog=include_catalog,
+        include_superseded=include_superseded,
         fetch_k=fetch_k,
         text_leg_on=text_leg,
         semantic_leg_on=semantic_leg,
