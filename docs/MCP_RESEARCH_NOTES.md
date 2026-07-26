@@ -277,7 +277,7 @@ ______________________________________________________________________
 ### For Template/Hive-Mind
 
 1. Create `MCP_SERVER_INTEGRATION.md` pattern
-2. Add MCP config examples to CLAUDE.md/.cursorrules
+2. Add MCP config examples to the project's agent instruction files
 3. Document API key privilege requirements
 4. Add troubleshooting section for common MCP issues
 

@@ -390,7 +390,7 @@ If your page uses EUI icons not already in the cache, add them to `frontend/src/
 ## Styling Guidelines
 
 > See also:
-> - `CLAUDE.md` → **Visual Quality Standards** for mandatory rules during page construction
+> - `docs/DEMO_PAGE_VISUAL_DESIGN.md` for mandatory rules during page construction
 > - `docs/PAGE_RECIPES.md` → Standard layout patterns with component imports and spacing values
 > - `docs/DEMO_PAGE_VISUAL_DESIGN.md` → CSS variable reference, typography scale, spacing system, dark mode rules
 

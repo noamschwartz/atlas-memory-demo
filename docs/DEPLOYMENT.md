@@ -554,4 +554,3 @@ curl http://localhost:8080/health
 
 - `hive-mind/patterns/deployment/CLOUDRUN_SIDECAR_DEPLOYMENT.md` - Detailed pattern guide
 - `hive-mind/patterns/deployment/DYNAMIC_PORT_CONFIGURATION.md` - Local development
-- `CLAUDE.md` - Project-wide conventions

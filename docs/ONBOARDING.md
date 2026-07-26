@@ -1,7 +1,7 @@
 > **DEPRECATED** - This file is kept as a reference only.
 >
 > The onboarding flow is now: `./setup.sh` then start a new AI session.
-> AI assistants use `docs/prompts/WELCOME_PROMPT.md` (loaded automatically by CLAUDE.md).
+> AI assistants use `docs/prompts/WELCOME_PROMPT.md`.
 
 # Onboarding Reference (Legacy)
 

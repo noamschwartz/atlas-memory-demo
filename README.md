@@ -51,7 +51,7 @@ open http://localhost:3000/atlas
 
 > If port `3000` or `8001` is already in use, `./dev` picks the next free port and writes it to `.dev-pids/frontend.port` / `.dev-pids/backend.port`. Check those files (or the URLs printed at the end of `./setup.sh`) and open that port instead.
 
-> The `ELASTIC_API_KEY` in `backend/.env` is the read-only key used by the running app. Admin / ingestion scripts that need write access read a separate `ADMIN_API_KEY` from `.secrets/ootb-admin.env` (gitignored). See `CLAUDE.md` → *Environment Variables & Secrets*.
+> The `ELASTIC_API_KEY` in `backend/.env` is the read-only key used by the running app. Admin / ingestion scripts that need write access read a separate `ADMIN_API_KEY` from `.secrets/ootb-admin.env` (gitignored). See `backend/.env.example` for the annotated template.
 
 ### What you'll see
 
