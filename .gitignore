@@ -157,3 +157,9 @@ CLAUDE.md
 
 # Generated evaluation reports
 backend/data/atlas_eval/
+
+# Internal working notes and editorial material (not for the public repo)
+lessons-learned.md
+decay-explained.md
+decay-reference.md
+docs/submission/
