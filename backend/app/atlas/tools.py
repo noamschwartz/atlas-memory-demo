@@ -133,12 +133,58 @@ def tool_schemas() -> list[dict[str, Any]]:
                                 "When set alongside supersedes_id, classifies "
                                 "the contradiction. 'harsh' = customer "
                                 "explicitly denied or corrected the prior "
-                                "fact ('no, that's wrong', 'I never X'); "
-                                "applies a small confidence penalty to the "
-                                "new fact. 'natural' (default) = routine "
+                                "fact ('no, that's wrong', 'I never X'); the "
+                                "old fact is marked retracted (it was never "
+                                "true) rather than archived as prior state, "
+                                "and the new fact takes a small confidence "
+                                "penalty. 'natural' (default) = routine "
                                 "update (moved, upgraded, preference "
-                                "change); no penalty."
+                                "change); the old fact stays as legitimate "
+                                "history, no penalty."
                             ),
+                        },
+                        # The three fields below exist so a PROCEDURAL write can
+                        # actually carry a playbook. Without them the schema
+                        # offered no way to express steps, so every
+                        # agent-written procedural fell through to
+                        # `steps: []` / `description: ""` / `name = text[:60]`
+                        # — while the system prompt instructed the agent to
+                        # "follow its steps". There were none to follow.
+                        "name": {
+                            "type": "string",
+                            "description": (
+                                "For procedural: short snake_case identifier, "
+                                "e.g. 'zigbee_reconnect'. Defaults to a "
+                                "truncation of `text` if omitted."
+                            ),
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": (
+                                "For procedural: one sentence on what the "
+                                "playbook achieves."
+                            ),
+                        },
+                        "steps": {
+                            "type": "array",
+                            "description": (
+                                "For procedural: the ordered steps to follow. "
+                                "Required for a playbook to be usable — a "
+                                "procedural memory with no steps cannot be "
+                                "acted on when it is later recalled."
+                            ),
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "order": {"type": "integer"},
+                                    "instruction": {"type": "string"},
+                                    "tool": {
+                                        "type": "string",
+                                        "enum": ["ask_user", "recall_memory", "escalate"],
+                                    },
+                                },
+                                "required": ["order", "instruction"],
+                            },
                         },
                     },
                     "required": ["memory_type", "text"],
@@ -210,10 +256,36 @@ def dispatch(
                 # back to the doc's creation time.
                 "timestamp": src.get("timestamp") or src.get("created_at"),
             }
+            # Confidence was written on every semantic fact — and reduced by
+            # SUPERSEDE_CONFIDENCE_PENALTY on a harsh supersession — but never
+            # reached the model. The agent was asked to "hedge" on a number it
+            # could not see. Surfacing it is what makes that penalty mean
+            # anything at all.
+            if src.get("confidence") is not None:
+                item["confidence"] = src["confidence"]
             if src.get("superseded_at"):
                 item["superseded_at"] = src["superseded_at"]
             if src.get("superseded_by"):
                 item["superseded_by"] = src["superseded_by"]
+            # A retracted fact was never true. Without this the agent cannot
+            # tell it apart from a fact that has merely stopped being true, and
+            # the system prompt's "treat superseded hits as prior state" rule
+            # turns a denial into recounted history.
+            if src.get("retracted"):
+                item["retracted"] = True
+            # A procedural memory is its steps. The system prompt instructs the
+            # agent to "follow its steps", but the compact payload carried only
+            # `trigger_text`, so a recalled playbook arrived with nothing to
+            # follow and the agent said so out loud in testing:
+            #   "The procedural memory matched but didn't return steps"
+            # Adding the schema fields (C1) let the agent WRITE a playbook;
+            # this is what lets it READ one back.
+            if h["memory_type"] == "procedural":
+                item["name"] = src.get("name")
+                item["description"] = src.get("description")
+                item["steps"] = src.get("steps") or []
+                item["success_count"] = src.get("success_count", 0)
+                item["failure_count"] = src.get("failure_count", 0)
             compact.append(item)
         return {"hits": compact, "count": len(compact)}
 
@@ -230,6 +302,12 @@ def dispatch(
             confidence=arguments.get("confidence"),
             supersedes_id=arguments.get("supersedes_id"),
             contradiction=arguments.get("contradiction"),
+            # Forwarded so a procedural write can carry its playbook; these were
+            # absent from both the schema and this call, so agent-written
+            # procedurals were always step-less.
+            name=arguments.get("name"),
+            description=arguments.get("description"),
+            steps=arguments.get("steps"),
             refresh=True,
         )
 

@@ -5,6 +5,13 @@ INDEX_SEMANTIC = "atlas_memory_semantic"
 INDEX_PROCEDURAL = "atlas_memory_procedural"
 INDEX_CATALOG = "atlas_catalog"
 
+# Small side index holding one document per user: the consolidation watermark.
+# Deliberately separate from the memory indices — it carries no `semantic_text`
+# field, so it is free of the scripted-update restrictions that apply to
+# indices containing one, and stamping progress here avoids having to backfill
+# a `consolidated_at` field onto every historical episodic document.
+INDEX_STATE = "atlas_memory_state"
+
 MEMORY_INDICES = {
     "episodic": INDEX_EPISODIC,
     "semantic": INDEX_SEMANTIC,
@@ -54,3 +61,46 @@ SUPERSEDE_CONFIDENCE_PENALTY = 0.1
 # Not a routing rule — when catalog's relevance signal is clearly stronger,
 # the reranker still picks it. Only fires when include_catalog=True.
 CATALOG_SOURCE_PRIOR = 0.85
+
+# How many existing semantic facts are shown to the consolidation LLM as the
+# "do not duplicate these" comparison set. This was 50 while the seed corpus
+# ships 60 facts per persona, so the ten oldest sat outside the window and were
+# re-extracted as duplicates — measured at 28 near-duplicate pairs across 197
+# live facts before this was raised. 200 covers the seeded corpus with headroom.
+# This is a mitigation, not a fix: the window is still finite, and the real
+# answer is retrieval-backed dedup (compare each candidate against its nearest
+# neighbours rather than against a recency slice).
+CONSOLIDATION_EXISTING_FACTS_LIMIT = 200
+
+# How many core facts (identity + constraint) are injected into the system
+# prompt each turn. Sarah's corpus carries 42 such facts (~930 tokens if all
+# were injected), so this is capped. Constraints are ordered ahead of identity
+# facts because they are the class retrieval is least able to reach: a nursery
+# quiet-hours constraint shares almost no vocabulary with "my hub keeps
+# dropping off wifi", so it will never win a similarity contest on that turn,
+# yet it must still shape the answer.
+CORE_MEMORY_LIMIT = 24
+
+# Master switch for the core-memory block. ON by default, but exposed because
+# the block is only as good as `fact_type` hygiene, and on a corpus built by the
+# older, looser consolidation prompt that hygiene can be poor: historical events
+# ("escalated to second-line support", "tone shifted to frustrated") were
+# routinely written as `identity`, and duplicates were written freely. Injecting
+# that into every turn costs tokens and adds noise. An operator upgrading an
+# existing deployment can set this False, run a reclassification pass over
+# `fact_type`, then turn it back on.
+CORE_MEMORY_ENABLED = True
+
+# Near-duplicate threshold for the core block. The corpus measured 28
+# near-duplicate pairs across 197 live facts, and several land in the same core
+# block ("shares her home with her partner and their newborn son Theo" appeared
+# twice, byte-identical). Deduplicating at selection time is far cheaper than
+# paying for both copies on every single turn.
+CORE_MEMORY_DEDUP_THRESHOLD = 0.82
+
+# Output ceiling for one consolidation pass. At 2048 a catch-up pass over a
+# backlog was being cut off mid-JSON, and because the parse then failed the
+# entire pass was discarded — every fact in it lost, silently. Consolidation
+# output scales with the number of episodes considered, so the ceiling has to
+# cover the catch-up and legacy-fallback cases, not the steady state.
+CONSOLIDATION_MAX_TOKENS = 4096

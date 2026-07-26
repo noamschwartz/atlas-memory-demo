@@ -21,7 +21,7 @@ from elasticsearch import Elasticsearch
 
 from .consolidate import consolidate
 from .memory.constants import LLM_INFERENCE_ID
-from .memory.operations import write_memory
+from .memory.operations import core_memory, write_memory
 from .llm import StreamResult, stream_chat
 from .tools import dispatch, parse_arguments, tool_schemas
 
@@ -33,6 +33,15 @@ SYSTEM_PROMPT_TEMPLATE = """<context>
 Today is {today}. Recalled memories include a `timestamp` field (event time for episodic, creation time for semantic and procedural) — use it when the customer asks "when" questions, and prefer it over guessing from prose.
 </context>
 
+<customer_profile>
+Durable facts about this customer — their identity and their hard constraints. These are always
+in context because their relevance does not depend on what was asked: a constraint about a
+sleeping baby or a barge's shore power matters to a troubleshooting answer even when the
+customer's message shares no words with it. Treat these as established. Do not ask the customer
+to repeat any of it, and do not contradict it.
+{core_memory}
+</customer_profile>
+
 <role>
 You are the Lumio Support Assistant — a friendly, knowledgeable support agent for Lumio smart home devices.
 </role>
@@ -42,12 +51,15 @@ You are the Lumio Support Assistant — a friendly, knowledgeable support agent 
 - For any question about products, firmware, known issues, or policies, call `recall_memory` with `include_catalog=true` so the shared Lumio knowledge base is searched too.
 - When the customer reveals a stable fact (devices they own, issues they have, firmware version, OS version, location, setup details), save it via `write_memory(memory_type="semantic")` IMMEDIATELY — even on a first interaction where prior recall returned nothing, and even if you also need to ask clarifying questions afterward. Save what was clearly stated; don't make the customer repeat it. Don't write a fact that already appears in recall.
 - If the customer contradicts a recalled fact, supersede the old fact instead of deleting it. Call `write_memory(text=<new>, supersedes_id=<old id>, contradiction="harsh"|"natural")`. The old fact is soft-superseded — kept in the index for audit but hidden from future recall. Don't call `forget_memory` on the old fact.
-  - Use `contradiction="harsh"` when the customer explicitly denies or corrects the prior fact ("no, that's wrong", "I never X", "I don't have an X"). The new fact is written with a small confidence penalty to reflect that the customer's prior state was wrong or has been overturned.
-  - Use `contradiction="natural"` for routine updates (the customer moved, upgraded a device, changed a preference). The new fact is written at full confidence.
+  - Use `contradiction="harsh"` when the customer explicitly denies or corrects the prior fact ("no, that's wrong", "I never X", "I don't have an X"). The old fact is marked **retracted**: it was never true. The new fact is written with a small confidence penalty.
+  - Use `contradiction="natural"` for routine updates (the customer moved, upgraded a device, changed a preference). The old fact was true and has stopped being true, so it stays on record as legitimate prior state. The new fact is written at full confidence.
   - Never ask the customer to confirm before superseding — the contradiction itself is the signal.
   - If recall returns multiple facts contradicted by the same new statement, issue one `write_memory(supersedes_id=…)` call per old id. Don't supersede facts that mention the same entity but remain true (e.g. *"Victorian flats in Bristol have thick walls"* stays unsuperseded after Sarah moves).
 - If recall returns a procedural memory whose trigger matches the customer's issue, follow its steps. Don't invent a different troubleshooting flow.
-- When the customer asks a retrospective question ("places I've lived", "what fixes have we tried", "what was on this device last time"), call `recall_memory` with `include_superseded=true` so soft-superseded facts also surface. In the reply, distinguish current state from prior state ("you live in Edinburgh now; you previously lived in Bristol"). Hits carrying a `superseded_at` field are archived state; treat them as the prior state.
+- When the customer asks a retrospective question ("places I've lived", "what fixes have we tried", "what was on this device last time"), call `recall_memory` with `include_superseded=true` so soft-superseded facts also surface. In the reply, distinguish current state from prior state ("you live in Edinburgh now; you previously lived in Bristol").
+  - A hit with `superseded_at` but no `retracted` flag is **prior state**: it was true, and it is legitimate history. Recount it as such.
+  - A hit with `retracted: true` was **never true** — the customer denied it. Never recount it back to them as something they did, owned, or experienced. If it is relevant at all, refer to it only as a correction you have already applied ("I had that noted incorrectly and have removed it"). Never say "you previously..." about a retracted fact.
+- Recalled facts may carry a `confidence` value (0.0-1.0). Treat anything below 0.7 as provisional: use it, but phrase it as something to confirm rather than as established fact.
 - Use `forget_memory` only when the customer explicitly asks you to forget something. It is not the contradiction tool.
 </memory_rules>
 
@@ -66,10 +78,26 @@ def _normalize_finish(finish: str | None) -> str:
     return finish or "stop"
 
 
-def _system_prompt() -> str:
-    """Build the system prompt with today's date injected as a `<context>` anchor."""
+def _format_core_memory(facts: list[dict[str, Any]]) -> str:
+    """Render core facts as a bulleted block for the system prompt."""
+    if not facts:
+        return "(no durable profile facts recorded for this customer yet)"
+    return "\n".join(f"- [{f.get('fact_type', 'fact')}] {f['text']}" for f in facts)
+
+
+def _system_prompt(core_facts: list[dict[str, Any]] | None = None) -> str:
+    """Build the system prompt with today's date and the customer's core memory.
+
+    Core memory is fetched per turn rather than cached: supersession and
+    consolidation can both change it mid-conversation, and a stale profile block
+    is worse than a slightly more expensive one (it is a filtered term query, no
+    vector search).
+    """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    return SYSTEM_PROMPT_TEMPLATE.format(today=today)
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        today=today,
+        core_memory=_format_core_memory(core_facts or []),
+    )
 
 
 def run_turn(
@@ -115,8 +143,27 @@ def run_turn(
         "role": "user",
     }
 
+    # Core memory: identity + constraint facts, injected unconditionally. These
+    # are the facts whose relevance is not query-conditional, so retrieval is
+    # structurally unable to surface them on an unrelated turn.
+    try:
+        core_facts = core_memory(es, user_id=user_id)
+    except Exception:  # noqa: BLE001
+        # A profile-block failure must not take down the turn; the agent simply
+        # falls back to retrieval-only, which is the previous behaviour.
+        logger.warning("core memory fetch failed for %s", user_id, exc_info=True)
+        core_facts = []
+    if core_facts:
+        yield {
+            "event": "core_memory",
+            "count": len(core_facts),
+            "facts": core_facts,
+        }
+
     # Working message list seeded with system + history + user turn.
-    messages: list[dict[str, Any]] = [{"role": "system", "content": _system_prompt()}]
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": _system_prompt(core_facts)}
+    ]
     messages.extend(history)
     messages.append({"role": "user", "content": user_message})
 
