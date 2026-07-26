@@ -19,6 +19,7 @@
       "superseded_by":{ "type": "keyword" },
       "superseded_at":{ "type": "date" },
       "supersedes":   { "type": "keyword" },
+      "retracted":    { "type": "boolean" },
       "metadata":     { "type": "flattened" }
     }
   }

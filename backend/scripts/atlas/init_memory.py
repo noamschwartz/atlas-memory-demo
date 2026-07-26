@@ -18,6 +18,7 @@ from app.elasticsearch.client import get_es_client
 from app.atlas.memory.constants import (
     EMBEDDING_INFERENCE_ID,
     INDEX_CATALOG,
+    INDEX_STATE,
     LLM_INFERENCE_ID,
     MEMORY_INDICES,
 )
@@ -71,7 +72,14 @@ def create_indices(es) -> None:
     """
     print("Creating memory indices...")
 
-    targets = list(MEMORY_INDICES.items()) + [("catalog", INDEX_CATALOG)]
+    targets = (
+        list(MEMORY_INDICES.items())
+        + [("catalog", INDEX_CATALOG)]
+        # Consolidation watermark store. Carries no semantic_text field, so it
+        # is exempt from the scripted-update restrictions that apply to the
+        # memory indices, and needs no inference endpoint.
+        + [("state", INDEX_STATE)]
+    )
     for memory_type, index_name in targets:
         mapping_file = MAPPINGS_DIR / f"{memory_type}.json"
         if not mapping_file.exists():

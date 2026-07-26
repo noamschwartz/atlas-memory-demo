@@ -8,6 +8,7 @@ Recall uses an RRF hybrid retriever fusing BM25 over `text` with the
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Iterable, Literal
@@ -17,6 +18,9 @@ from elasticsearch import helpers as es_helpers
 
 from .constants import (
     CATALOG_SOURCE_PRIOR,
+    CORE_MEMORY_DEDUP_THRESHOLD,
+    CORE_MEMORY_ENABLED,
+    CORE_MEMORY_LIMIT,
     DECAY_EPISODIC_OFFSET,
     DECAY_EPISODIC_SCALE,
     DECAY_GAUSS,
@@ -71,6 +75,7 @@ def write_memory(
     steps: list[dict[str, Any]] | None = None,
     supersedes_id: str | None = None,
     contradiction: str | None = None,
+    allow_retraction: bool = True,
     refresh: bool = False,
 ) -> dict[str, str]:
     """Insert a memory document.
@@ -135,10 +140,40 @@ def write_memory(
 
     if memory_type == "semantic" and supersedes_id:
         try:
+            # `retracted` distinguishes the two things supersession was being
+            # asked to represent with one mechanism:
+            #
+            #   natural  — the fact WAS true and has stopped being true
+            #              ("we moved to Edinburgh"). Prior state. Legitimate
+            #              history, safe to recount on a retrospective question.
+            #   harsh    — the fact was NEVER true ("I never lived in Bristol,
+            #              that was my sister"). A retraction, not history.
+            #
+            # Before this, both wrote byte-identical updates to the old
+            # document, and the agent rule "hits carrying superseded_at are
+            # archived state; treat them as the prior state" then narrated a
+            # denied fact straight back to the user as something they had done.
+            # `retracted` is only set from evidence we can trust. A harsh
+            # contradiction is a strong claim — it tells the agent never to
+            # recount the old fact as something the customer did — so it is
+            # accepted only when the denial was observed first-hand, i.e. the
+            # customer's own words were in context when the call was made.
+            #
+            # Consolidation passes allow_retraction=False. It infers intent
+            # second-hand from a window of stored episodes, and a misread there
+            # would permanently flag a legitimate memory as never-true. It still
+            # gets the confidence penalty, which is the soft version of the same
+            # signal and is recoverable.
+            superseded_doc: dict[str, Any] = {
+                "superseded_by": doc_id,
+                "superseded_at": now,
+            }
+            if contradiction == "harsh" and allow_retraction:
+                superseded_doc["retracted"] = True
             es.update(
                 index=INDEX_SEMANTIC,
                 id=supersedes_id,
-                doc={"superseded_by": doc_id, "superseded_at": now},
+                doc=superseded_doc,
                 refresh=refresh,
             )
         except NotFoundError:
@@ -485,7 +520,17 @@ def _bump_recall_stats(es: Elasticsearch, hits: list[dict[str, Any]]) -> None:
             actions,
             raise_on_error=False,
             raise_on_exception=False,
-            refresh="wait_for",
+            # refresh=False, not "wait_for". This bulk runs synchronously inside
+            # recall_memory, which sits on the user-visible path (the agent
+            # pre-recalls on every turn). "wait_for" blocks until the shard
+            # refreshes — up to index.refresh_interval, 1s by default — and it
+            # did so on every single recall, for a fire-and-forget statistics
+            # write whose only consumer is a *future* recall's ranking. Nothing
+            # in the current turn reads use_count or last_used_at, so there is
+            # nothing to wait for. Elastic's own guidance: "Unless you have a
+            # good reason to wait for the change to become visible, always use
+            # refresh=false."
+            refresh=False,
             stats_only=False,
         )
         if errors:
@@ -625,19 +670,35 @@ def list_memories(
     user_id: str,
     memory_type: MemoryType,
     limit: int = 50,
+    include_superseded: bool = True,
 ) -> list[dict[str, Any]]:
-    """Recent memories for a user, newest first."""
+    """Recent memories for a user, newest first.
+
+    `include_superseded` defaults to True so the existing callers are unchanged:
+    the `/api/memory/list` route feeds the Memory Inspector, and hiding
+    superseded facts there would remove the audit view that the whole
+    supersession design exists to provide.
+
+    Consolidation passes False. Handing the consolidation LLM a comparison set
+    that still contains archived facts lets it re-supersede an already-archived
+    document, and pads a finite window with entries that can never be
+    legitimately matched against.
+    """
     index = _index_for(memory_type)
     sort_field = (
         "timestamp"
         if memory_type == "episodic"
         else "created_at"
     )
+    query: dict[str, Any] = {"bool": {"filter": [{"term": {"user_id": user_id}}]}}
+    if not include_superseded:
+        query["bool"]["must_not"] = [{"exists": {"field": "superseded_by"}}]
+
     response = es.search(
         index=index,
         body={
             "size": limit,
-            "query": {"term": {"user_id": user_id}},
+            "query": query,
             "sort": [{sort_field: "desc"}],
             "_source": {"excludes": ["semantic_content"]},
         },
@@ -646,6 +707,113 @@ def list_memories(
         {"id": h["_id"], "source": h["_source"]}
         for h in response["hits"]["hits"]
     ]
+
+
+def _dedupe_core_facts(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop near-duplicate facts, keeping the first occurrence.
+
+    Consolidation duplication is measurable on a live corpus (28 near-duplicate
+    pairs across 197 live facts), and several land in the same core block: one
+    persona had "shares her home with her partner and their newborn son Theo"
+    twice, byte-identical, plus five separate phrasings of "stability matters
+    because there is a newborn". Paying for both copies of every duplicate on
+    every single turn is the worst place to absorb that cost, so the block is
+    deduplicated at selection time.
+
+    Uses token-set Jaccard rather than an embedding call: this runs on every
+    turn, and the duplicates in question are lexically near-identical because
+    they were re-extracted from the same episodes.
+    """
+    kept: list[dict[str, Any]] = []
+    seen_tokens: list[set[str]] = []
+    for f in facts:
+        tokens = set(re.findall(r"[a-z0-9]+", f["text"].lower()))
+        if not tokens:
+            continue
+        if any(
+            len(tokens & prev) / len(tokens | prev) >= CORE_MEMORY_DEDUP_THRESHOLD
+            for prev in seen_tokens
+        ):
+            continue
+        kept.append(f)
+        seen_tokens.append(tokens)
+    return kept
+
+
+def core_memory(
+    es: Elasticsearch,
+    *,
+    user_id: str,
+    limit: int = CORE_MEMORY_LIMIT,
+) -> list[dict[str, Any]]:
+    """Facts that should be in context on every turn, regardless of the query.
+
+    Retrieval is the wrong mechanism for a whole class of fact. A constraint
+    like "the nursery must stay quiet between 19:00 and 07:00" is
+    unconditionally relevant to what the agent should say, but its relevance is
+    not *query-conditional*: it shares almost no vocabulary with "my hub keeps
+    dropping off wifi", so neither BM25 nor the dense leg will surface it on
+    that turn, and the cross-encoder scores candidates against the query, which
+    guarantees it stays out. The fact was correctly stored, correctly typed, and
+    had no path into the context.
+
+    This is the tier Letta calls core memory, and that file-backed agent setups
+    get from a static profile document. `fact_type` already carried the labels
+    needed to build it here —
+    they were written on every semantic fact, indexed as a keyword, and never
+    used in a single query.
+
+    Constraints are returned ahead of identity facts, and only then by recency,
+    because when the cap bites it should bite on biography rather than on a
+    hard limit the agent must respect.
+    """
+    if not CORE_MEMORY_ENABLED:
+        return []
+
+    # Over-fetch, then dedup, then cap. Deduplicating after truncation would
+    # let duplicates consume slots and silently shrink the effective block.
+    response = es.search(
+        index=INDEX_SEMANTIC,
+        body={
+            "size": limit * 3,
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"user_id": user_id}},
+                        {"terms": {"fact_type": ["constraint", "identity"]}},
+                    ],
+                    "must_not": [{"exists": {"field": "superseded_by"}}],
+                }
+            },
+            "sort": [
+                # keyword sort: "constraint" < "identity" alphabetically, so
+                # ascending order puts constraints first. Documented here
+                # because it is load-bearing rather than incidental.
+                {"fact_type": "asc"},
+                # Oldest-first WITHIN a type. Counter-intuitive, and load-bearing.
+                # Newest-first evicted the foundational facts: on the live corpus
+                # "Sarah owns a Lumio Hub v2" was pushed out of the block by
+                # "Sarah's tone shifted from enthusiastic to tired", because
+                # consolidation output is always newer than the durable facts it
+                # was derived from. Stable attributes are established early and
+                # restated rarely; churn is recent. For an always-in-context
+                # block, age is a signal of durability.
+                {"created_at": "asc"},
+            ],
+            "_source": ["text", "fact_type"],
+        },
+    )
+
+    candidates = [
+        {
+            "id": h["_id"],
+            "text": (h["_source"].get("text") or "").strip(),
+            "fact_type": h["_source"].get("fact_type"),
+        }
+        for h in response["hits"]["hits"]
+        if (h["_source"].get("text") or "").strip()
+    ]
+    return _dedupe_core_facts(candidates)[:limit]
 
 
 def forget_memory(
@@ -743,6 +911,7 @@ __all__ = [
     "INDEX_SEMANTIC",
     "MEMORY_INDICES",
     "MemoryType",
+    "core_memory",
     "forget_memory",
     "list_memories",
     "recall_memory",

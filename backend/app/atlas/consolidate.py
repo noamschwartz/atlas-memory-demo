@@ -15,8 +15,13 @@ from typing import Any
 
 from elasticsearch import Elasticsearch
 
-from .memory.constants import LLM_INFERENCE_ID_FAST
+from .memory.constants import (
+    CONSOLIDATION_EXISTING_FACTS_LIMIT,
+    CONSOLIDATION_MAX_TOKENS,
+    LLM_INFERENCE_ID_FAST,
+)
 from .memory.operations import list_memories, update_procedural, write_memory
+from .memory.state import ensure_watermark, episodes_since, set_watermark
 from .llm import complete_chat
 
 logger = logging.getLogger(__name__)
@@ -34,7 +39,8 @@ Return STRICT JSON (no commentary, no markdown fence):
       "fact_type": "preference" | "identity" | "constraint" | "world",
       "confidence": 0.0-1.0,
       "supporting_episode_ids": ["<episode-id>", ...],
-      "supersedes_id": "<id-of-existing-fact-this-replaces-or-null>"
+      "supersedes_id": "<id-of-existing-fact-this-replaces-or-null>",
+      "contradiction": "natural" | "harsh"
     }
   ],
   "new_procedures": [
@@ -62,9 +68,20 @@ Return STRICT JSON (no commentary, no markdown fence):
 FACTS:
 - DO NOT duplicate any existing fact — even paraphrases.
 - Only extract DURABLE facts (preferences, identity, constraints), NOT one-off questions or transient mentions.
-- Pick fact_type carefully: preference (likes/dislikes), identity (who they are/where they live), constraint (allergies, hard limits), world (factual context they shared).
+- Pick fact_type carefully. `identity` and `constraint` are NOT just labels: every fact carrying one is injected into the assistant's context on EVERY future turn, whether or not it is relevant to what was asked. Mistyping a transient observation as one of them permanently pollutes that context.
+    - `identity`  — stable facts about WHO the customer is and what they own. True for months or years. "Lives in Bristol." "Owns a Hub v2." "Has a newborn son, Theo."
+    - `constraint` — a HARD LIMIT the assistant must always respect. An allergy, an accessibility need, a quiet-hours rule, a physical limitation of their home. If violating it would produce a harmful or unusable answer, it is a constraint.
+    - `preference` — likes, dislikes, chosen settings. Real, but not always-relevant.
+    - `world`      — situational or time-bound context: what happened, what was resolved, current status. Anything phrased as an event, an outcome, or a "currently"/"no longer"/"recently" statement belongs here.
+  Test before using identity or constraint: "would this still matter, unprompted, in an unrelated conversation six months from now?" If not, it is `world` or `preference`.
+  "The Zigbee regression was resolved in February" is `world`, not `constraint`. "Automations are working again" is `world`, not `constraint`.
 - Tie each fact to the supporting_episode_ids it came from.
 - If a recent event SUPERSEDES an existing fact (new location replaces old, device upgraded, preference reversed), set supersedes_id to the id of the existing fact being replaced.
+- When you set supersedes_id, ALSO set contradiction:
+    - "natural" (default) if the old fact WAS true and has simply stopped being true — the customer moved, upgraded, changed their mind. The old fact stays on record as legitimate prior state.
+    - "harsh" if the old fact was NEVER true — the customer denied it outright ("I never had one", "that was my sister, not me"). The old fact is marked retracted so it is never recounted back to them as something they did.
+  This distinction cannot be recovered later, so make it here.
+- Events are listed OLDEST FIRST. When two events conflict, the LATER one wins.
 - If nothing durable is new, use an empty array for new_facts.
 
 PROCEDURES:
@@ -161,11 +178,44 @@ def consolidate(
 
     Returns: {"candidates": [...], "created": [...], "dry_run": bool}
     """
-    episodes = list_memories(es, user_id=user_id, memory_type="episodic", limit=lookback)
-    existing = list_memories(es, user_id=user_id, memory_type="semantic", limit=50)
+    # Only look at episodes this user has not already had consolidated.
+    #
+    # Previously this read the `lookback` most recent episodes on every turn
+    # with nothing recording what had already been distilled, so turn N+1
+    # re-processed 29 of the 30 episodes turn N had just seen. That cost a full
+    # LLM call per turn regardless of whether anything durable had happened,
+    # and leaned entirely on a prose "do not duplicate" instruction to stop the
+    # same fact being written twice.
+    #
+    # `ensure_watermark` returns None when the watermark store is unavailable
+    # (typically: `atlas_memory_state` not provisioned yet, or the app key not
+    # granted access). In that case fall back to the previous behaviour rather
+    # than consolidating nothing — degrading to the old path is acceptable,
+    # silently disabling consolidation is not.
+    watermark = ensure_watermark(es, user_id)
+    if watermark:
+        episodes = episodes_since(es, user_id=user_id, since=watermark, limit=lookback)
+    else:
+        # Legacy path. list_memories returns newest-first; reverse it so the
+        # model sees events in the order they happened (see below).
+        episodes = list(reversed(
+            list_memories(es, user_id=user_id, memory_type="episodic", limit=lookback)
+        ))
+
+    existing = list_memories(
+        es,
+        user_id=user_id,
+        memory_type="semantic",
+        limit=CONSOLIDATION_EXISTING_FACTS_LIMIT,
+        # Archived facts are not candidates for duplication and must not be
+        # re-superseded; excluding them also stops them consuming the window.
+        include_superseded=False,
+    )
     procedurals = list_memories(es, user_id=user_id, memory_type="procedural", limit=20)
 
     if not episodes:
+        # With a watermark in place this is the common case, not an edge case:
+        # a turn that produced nothing new costs zero LLM calls.
         return {"candidates": [], "created": [], "dry_run": dry_run, "reason": "no_episodes"}
 
     prompt = CONSOLIDATION_PROMPT % {
@@ -177,14 +227,33 @@ def consolidate(
     raw = complete_chat(
         inference_id=inference_id,
         messages=[{"role": "user", "content": prompt}],
-        max_completion_tokens=2048,
+        # 2048 was not enough: a backlog of episodes produces ten-plus facts
+        # and multi-step procedures, and the response was being cut off
+        # mid-object, so the whole pass was discarded as "bad_json" and every
+        # fact in it was lost silently. With the watermark active a normal turn
+        # yields a fraction of this, but the ceiling has to cover the catch-up
+        # case and the legacy fallback path.
+        max_completion_tokens=CONSOLIDATION_MAX_TOKENS,
     )
 
     try:
         parsed = _extract_json(raw)
     except json.JSONDecodeError as exc:
-        logger.warning("consolidate: bad JSON from LLM: %s\nraw=%r", exc, raw)
-        return {"candidates": [], "created": [], "dry_run": dry_run, "error": "bad_json"}
+        # Distinguish a truncated response from genuinely malformed output;
+        # they have completely different fixes and used to look identical.
+        truncated = bool(raw) and not raw.rstrip().endswith(("}", "```"))
+        logger.warning(
+            "consolidate: %s from LLM (%s chars): %s",
+            "TRUNCATED response — raise CONSOLIDATION_MAX_TOKENS" if truncated
+            else "malformed JSON",
+            len(raw),
+            exc,
+        )
+        logger.debug("consolidate: raw output was %r", raw)
+        return {
+            "candidates": [], "created": [], "dry_run": dry_run,
+            "error": "truncated" if truncated else "bad_json",
+        }
 
     candidates: list[dict[str, Any]] = parsed.get("new_facts", []) or []
     new_procedures: list[dict[str, Any]] = parsed.get("new_procedures", []) or []
@@ -210,6 +279,14 @@ def consolidate(
         if not text:
             continue
         old_id = (fact.get("supersedes_id") or "").strip() or None
+        # `contradiction` was never forwarded here, so the background path could
+        # not express harsh supersession at all: every consolidation-driven
+        # supersession looked "natural" regardless of what the customer said.
+        # Since the post itself recommends moving consolidation to a background
+        # job, that would have silently dropped the distinction entirely.
+        contradiction = (fact.get("contradiction") or "").strip().lower() or None
+        if contradiction not in ("harsh", "natural", None):
+            contradiction = None
         result = write_memory(
             es,
             user_id=user_id,
@@ -219,6 +296,15 @@ def consolidate(
             confidence=float(fact.get("confidence") or 0.7),
             source_episodes=list(fact.get("supporting_episode_ids") or []),
             supersedes_id=old_id,
+            contradiction=contradiction,
+            # Consolidation may lower confidence on a harsh contradiction, but
+            # may not mark the old fact `retracted`. Retraction is a hard rule
+            # ("never recount this to the customer"), and consolidation infers
+            # the contradiction second-hand from stored episodes rather than
+            # from the customer's words in context. A misread would permanently
+            # flag a true memory as never-true. The in-turn agent path, where
+            # the utterance is right there, keeps the capability.
+            allow_retraction=False,
             refresh=True,
         )
         if old_id:
@@ -264,6 +350,18 @@ def consolidate(
         )
         updated_procedures.append(result)
 
+    # Advance the watermark only after the writes above have succeeded, and only
+    # as far as the newest episode actually processed — not to "now". Stamping
+    # `now` would swallow any episode written while this pass was running.
+    # On the legacy path (no watermark store) this is a no-op.
+    if watermark:
+        newest = max(
+            (e["source"].get("timestamp") for e in episodes if e["source"].get("timestamp")),
+            default=None,
+        )
+        if newest:
+            set_watermark(es, user_id, newest)
+
     return {
         "candidates": candidates,
         "created": created,
@@ -271,4 +369,6 @@ def consolidate(
         "created_procedures": created_procedures,
         "updated_procedures": updated_procedures,
         "dry_run": False,
+        "episodes_considered": len(episodes),
+        "watermark_active": bool(watermark),
     }

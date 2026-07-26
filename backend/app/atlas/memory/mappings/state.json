@@ -1,0 +1,9 @@
+{
+  "mappings": {
+    "properties": {
+      "user_id":              { "type": "keyword" },
+      "last_consolidated_at": { "type": "date" },
+      "updated_at":           { "type": "date" }
+    }
+  }
+}
