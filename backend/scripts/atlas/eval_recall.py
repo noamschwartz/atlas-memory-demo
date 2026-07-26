@@ -80,8 +80,10 @@ SAMPLE_SIZES = {
 }
 QUESTIONS_PER_DOC = 2
 
-# Seed for deterministic doc sampling. Question generation itself uses
-# whatever non-determinism the LLM has, but the cache pins the output.
+# Seed for deterministic doc sampling. Combined with user_id + memory_type into
+# a STRING seed (see _sample_docs) so the draw is stable across processes.
+# Question generation itself uses whatever non-determinism the LLM has, but the
+# on-disk cache pins each sampled doc's questions once generated.
 SAMPLE_SEED = 42
 
 
@@ -122,10 +124,20 @@ def _doc_text(memory_type: str, source: dict[str, Any]) -> str:
             step_texts = []
             for s in steps:
                 if isinstance(s, dict):
-                    step_texts.append(s.get("text") or s.get("description") or "")
+                    # The step schema is {order, instruction, tool} — see
+                    # mappings/procedural.json and the consolidation prompt.
+                    # Reading `text`/`description` (neither of which exists on a
+                    # step) silently yielded a list of empty strings, so no step
+                    # content ever reached the question generator. `instruction`
+                    # is the real field; the other two stay as tolerant fallbacks.
+                    step_texts.append(
+                        s.get("instruction") or s.get("text") or s.get("description") or ""
+                    )
                 else:
                     step_texts.append(str(s))
-            if step_texts:
+            # Guard on content, not on list length: a list of empty strings is
+            # truthy and used to append a dangling "Steps: " with nothing after it.
+            if any(step_texts):
                 parts.append("Steps: " + "; ".join(t for t in step_texts if t))
         return "\n".join(p for p in parts if p).strip()
     return (source.get("text") or "").strip()
@@ -163,7 +175,12 @@ def _sample_docs(es, user_id: str, memory_type: str, index: str, n: int) -> list
     docs.sort(key=lambda d: d["id"])
     if len(docs) <= n:
         return docs
-    rng = random.Random(SAMPLE_SEED + hash(user_id + memory_type) % (2**32))
+    # Seed from a STRING, not from builtin hash(). CPython salts hash() on str
+    # per process (PYTHONHASHSEED is random by default since 3.3), so the old
+    # `SAMPLE_SEED + hash(user_id + memory_type)` drew a different sample in
+    # every process — the eval was silently non-deterministic despite claiming
+    # otherwise. random.Random accepts a str and hashes it stably.
+    rng = random.Random(f"{SAMPLE_SEED}:{user_id}:{memory_type}")
     return rng.sample(docs, n)
 
 
