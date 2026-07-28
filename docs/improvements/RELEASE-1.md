@@ -154,6 +154,56 @@ prompt and lands in its own block rather than in `<recent_events>`, and it never
 indexed document. Plus the prompt guard rails and backwards compatibility for callers that pass
 nothing.
 
+## A4b. Cross-turn synthesis context
+
+Making consolidation incremental fixed a cost problem and created a narrowness one. With a
+watermark in place a pass normally sees a single new user message, and some facts do not exist in
+any single message. A customer mentions a dog in one turn and chewed cabling several turns later;
+the durable constraint ("mounts sensors high because the dog chews cable") is in neither alone.
+
+Consolidation now also receives the `CONSOLIDATION_CONTEXT_EPISODES` (12) messages immediately
+preceding the ones being processed, in an `<earlier_events>` block, bounded strictly before the
+oldest new episode so the two blocks never overlap. They are read for synthesis only: the prompt
+states they have already been consolidated and must not be re-extracted, and any fact drawn from
+them must still cite an id from `<recent_events>`.
+
+The context fetch is wrapped so a failure degrades to the previous single-window behaviour rather
+than losing the turn's facts.
+
+**Breaking?** No. One additional bounded query per consolidation pass.
+
+## A4c. Advice whose outcome was never confirmed
+
+A conversation usually ends immediately after the agent gives advice. Nobody ever says whether it
+worked, so the outcome is lost, and the next conversation is free to re-suggest a fix that already
+failed.
+
+The customer's own final message is fine: it is written to episodic and consolidated at the end of
+that same turn. What was missing was any record of what the agent advised and whether it landed.
+
+When the assistant context shows concrete advice and the events contain neither a confirmation nor
+a rejection of it, consolidation now writes one record:
+
+- `fact_type: "world"`, never `identity` or `constraint`, so it is retrieval-gated and stays out of
+  the always-in-context profile block
+- `pending_outcome: true`, an additive boolean, queryable so a later pass can resolve it rather
+  than having to rediscover it by matching prose
+- phrased as what the assistant advised, never as something the customer asserted
+- citing the customer message that prompted the advice
+
+No model prose enters the index. What is stored is the utterance-event, which is true regardless of
+whether the advice was any good.
+
+`_summarize_existing` marks these as `[pending]` so the extractor can see what is unresolved, and
+the prompt tells it to supersede the pending fact once the customer confirms or rejects. The agent
+prompt tells it to ask rather than assume: *"Last time I suggested reserving a static IP. Did that
+help?"*
+
+**Breaking?** No. Additive boolean, absent on every existing document, which reads as not pending.
+
+**Verified.** Twelve unit tests across both changes, plus a live check on the cluster: a turn
+ending on advice produced exactly one `world` fact with `pending_outcome` persisted.
+
 ## A5. Retraction distinguished from prior state
 
 Supersession was being asked to represent two different things with one mechanism:
@@ -239,6 +289,8 @@ demo path writes to.
 | Core memory tier | No | No |
 | Consolidation watermark | No (degrades without it) | **Yes**, create `atlas_memory_state`, grant app key r/w |
 | Assistant reply as consolidation context | No | No |
+| Cross-turn synthesis context | No | No |
+| Unconfirmed-advice records | No | No |
 | Retraction vs prior state | No | No |
 | Procedural playbook round-trip | No (optional schema props) | No |
 | Confidence in recall payload | No | No |
@@ -247,7 +299,7 @@ demo path writes to.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 124 passing, 40 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 136 passing, 52 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step

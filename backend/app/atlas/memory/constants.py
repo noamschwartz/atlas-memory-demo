@@ -121,3 +121,15 @@ CONSOLIDATION_ASSISTANT_CONTEXT_TURNS = 4
 # Oldest turns are dropped first when the budget binds, since the confirmation
 # a customer just gave refers to the most recent advice.
 CONSOLIDATION_ASSISTANT_CONTEXT_CHARS = 6000
+
+# How many already-consolidated episodes are shown to the extractor as
+# synthesis context (never as material to extract from).
+#
+# The watermark means a pass normally sees a single new user message, which is
+# correct for cost but too narrow for facts that only exist across turns: a
+# customer mentions a dog in turn two and chewed cabling in turn seven, and the
+# constraint ("mounts sensors high because the dog chews cable") is in neither
+# message alone. Twelve covers a typical support exchange without reintroducing
+# the per-turn reprocessing cost the watermark removed, because these episodes
+# are read for context, not re-extracted.
+CONSOLIDATION_CONTEXT_EPISODES = 12

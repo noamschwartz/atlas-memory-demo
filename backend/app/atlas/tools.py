@@ -273,6 +273,10 @@ def dispatch(
             # turns a denial into recounted history.
             if src.get("retracted"):
                 item["retracted"] = True
+            # Advice whose outcome was never established. The agent should
+            # ask rather than assume it worked.
+            if src.get("pending_outcome"):
+                item["pending_outcome"] = True
             # A procedural memory is its steps. The system prompt instructs the
             # agent to "follow its steps", but the compact payload carried only
             # `trigger_text`, so a recalled playbook arrived with nothing to

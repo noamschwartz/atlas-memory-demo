@@ -76,6 +76,7 @@ def write_memory(
     supersedes_id: str | None = None,
     contradiction: str | None = None,
     allow_retraction: bool = True,
+    pending_outcome: bool | None = None,
     refresh: bool = False,
 ) -> dict[str, str]:
     """Insert a memory document.
@@ -121,6 +122,11 @@ def write_memory(
             use_count=0,
             metadata=metadata or {},
         )
+        if pending_outcome is not None:
+            # Marks a record of advice whose result was never established.
+            # Queryable so a later pass can resolve it rather than having to
+            # rediscover it by matching prose.
+            doc["pending_outcome"] = bool(pending_outcome)
         if supersedes_id:
             doc["supersedes"] = supersedes_id
     else:  # procedural

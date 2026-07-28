@@ -16,12 +16,18 @@ from typing import Any
 from elasticsearch import Elasticsearch
 
 from .memory.constants import (
+    CONSOLIDATION_CONTEXT_EPISODES,
     CONSOLIDATION_EXISTING_FACTS_LIMIT,
     CONSOLIDATION_MAX_TOKENS,
     LLM_INFERENCE_ID_FAST,
 )
 from .memory.operations import list_memories, update_procedural, write_memory
-from .memory.state import ensure_watermark, episodes_since, set_watermark
+from .memory.state import (
+    ensure_watermark,
+    episodes_before,
+    episodes_since,
+    set_watermark,
+)
 from .llm import complete_chat
 
 logger = logging.getLogger(__name__)
@@ -40,7 +46,8 @@ Return STRICT JSON (no commentary, no markdown fence):
       "confidence": 0.0-1.0,
       "supporting_episode_ids": ["<episode-id>", ...],
       "supersedes_id": "<id-of-existing-fact-this-replaces-or-null>",
-      "contradiction": "natural" | "harsh"
+      "contradiction": "natural" | "harsh",
+      "pending_outcome": true | false
     }
   ],
   "new_procedures": [
@@ -65,6 +72,11 @@ Return STRICT JSON (no commentary, no markdown fence):
 </output_format>
 
 <rules>
+USING <earlier_events>:
+- These are the customer's own earlier messages. They have ALREADY been consolidated, so do not re-extract facts from them.
+- Use them to spot facts that exist across turns but in no single turn. If the customer mentioned a dog in one message and chewed cabling in another, the durable constraint ("mounts sensors high because the dog chews cable") is in neither message alone and should be extracted once you can see both.
+- A fact you extract this way must still cite an id from <recent_events>. If the only evidence sits entirely in <earlier_events>, it was either already extracted or is not new, so skip it.
+
 USING <assistant_reply_context>:
 - It holds the last few things the assistant said to the customer, oldest first, separated by `--- next assistant turn ---`. It is NOT part of the customer's record and is NOT evidence.
 - It spans several turns on purpose. A customer confirms a fix one turn AFTER receiving it, so when an event says "it worked", the steps being confirmed are in an EARLIER assistant turn, not the latest one. Look back through the block to find what is actually being confirmed.
@@ -72,6 +84,21 @@ USING <assistant_reply_context>:
 - NEVER extract a fact from it. Anything the assistant asserted is unverified model output. If the assistant claimed the customer owns a Hub v2 and the customer never said so, that is not a fact. The customer must have said or confirmed it in <recent_events>.
 - A commitment the assistant made ("I've flagged your account, billing will email within 2 working days") may be recorded, but as fact_type "world" and only when the customer's own messages show they were told. Never as identity or constraint.
 - supporting_episode_ids must always cite ids from <recent_events>. The assistant context has no ids and can never be cited.
+
+RECORDING UNCONFIRMED ADVICE:
+- A conversation often ends right after the assistant gives advice, so nobody ever says whether it worked. That outcome is then lost forever, and the next conversation re-suggests a fix that already failed.
+- When <assistant_reply_context> shows concrete advice, steps, or a commitment, and <recent_events> contains NO confirmation ("that worked", "sorted") and NO rejection ("still broken", "didn't help") of it, emit ONE fact recording it:
+    - fact_type MUST be "world". Never identity, never constraint. This is a record of what was said, not a durable truth about the customer.
+    - "pending_outcome": true
+    - text states what was advised and that the result is unknown, e.g. "Assistant advised reserving a static IP for the hub after the customer reported Wi-Fi dropouts; outcome not yet confirmed."
+    - supporting_episode_ids cites the customer message that prompted the advice.
+- Do NOT record the advice as though the customer stated it. "The customer's hub needs a static IP" is wrong. "The assistant advised X" is right.
+- Only ONE such fact per pass, for the most recent unresolved advice. Do not restate advice that already appears in <existing_facts>.
+
+RESOLVING IT LATER:
+- Facts in <existing_facts> shown as [pending] are advice whose outcome was never established.
+- If <recent_events> now confirms or rejects that advice, supersede the pending fact: set supersedes_id to it, contradiction "natural", and write the resolved version ("...; the customer confirmed this resolved the issue" or "...; the customer reported it did not help"). Set pending_outcome false on the new fact.
+- A confirmation is also the trigger for a procedural_update, so do both when the evidence supports it.
 
 FACTS:
 - DO NOT duplicate any existing fact — even paraphrases.
@@ -110,6 +137,10 @@ PROCEDURES:
 %(procedures)s
 </existing_procedures>
 
+<earlier_events>
+%(earlier_events)s
+</earlier_events>
+
 <recent_events>
 %(events)s
 </recent_events>
@@ -126,8 +157,9 @@ def _summarize_existing(rows: list[dict[str, Any]]) -> str:
     out = []
     for r in rows:
         src = r["source"]
+        pending = " [pending]" if src.get("pending_outcome") else ""
         out.append(
-            f"- id={r['id']} [{src.get('fact_type', 'fact')}] {src.get('text', '')}"
+            f"- id={r['id']}{pending} [{src.get('fact_type', 'fact')}] {src.get('text', '')}"
         )
     return "\n".join(out)
 
@@ -229,6 +261,29 @@ def consolidate(
             list_memories(es, user_id=user_id, memory_type="episodic", limit=lookback)
         ))
 
+    # Already-consolidated episodes, for synthesis only. The watermark means a
+    # pass normally sees one new message, which is right for cost and too narrow
+    # for facts that exist across turns rather than within one. Bounded by the
+    # oldest episode in this pass so the two blocks never overlap.
+    earlier_episodes: list[dict[str, Any]] = []
+    oldest_new = next(
+        (e["source"].get("timestamp") for e in episodes if e["source"].get("timestamp")),
+        None,
+    )
+    if oldest_new:
+        try:
+            earlier_episodes = episodes_before(
+                es,
+                user_id=user_id,
+                before=oldest_new,
+                limit=CONSOLIDATION_CONTEXT_EPISODES,
+            )
+        except Exception:  # noqa: BLE001
+            # Context is an enhancement, not a precondition. Losing it degrades
+            # extraction to the previous single-window behaviour; failing the
+            # pass would lose the turn's facts entirely.
+            logger.warning("earlier-episode context fetch failed for %s", user_id, exc_info=True)
+
     existing = list_memories(
         es,
         user_id=user_id,
@@ -248,6 +303,7 @@ def consolidate(
     prompt = CONSOLIDATION_PROMPT % {
         "existing": _summarize_existing(existing),
         "procedures": _summarize_procedurals(procedurals),
+        "earlier_events": _summarize_events(earlier_episodes),
         "events": _summarize_events(episodes),
         "assistant_context": (assistant_context or "").strip() or "(none)",
     }
@@ -333,6 +389,8 @@ def consolidate(
             # flag a true memory as never-true. The in-turn agent path, where
             # the utterance is right there, keeps the capability.
             allow_retraction=False,
+            pending_outcome=bool(fact.get("pending_outcome"))
+            if fact.get("pending_outcome") is not None else None,
             refresh=True,
         )
         if old_id:

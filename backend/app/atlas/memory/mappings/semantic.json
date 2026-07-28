@@ -20,6 +20,7 @@
       "superseded_at":{ "type": "date" },
       "supersedes":   { "type": "keyword" },
       "retracted":    { "type": "boolean" },
+      "pending_outcome": { "type": "boolean" },
       "metadata":     { "type": "flattened" }
     }
   }

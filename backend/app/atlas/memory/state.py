@@ -173,8 +173,51 @@ def episodes_since(
     ]
 
 
+def episodes_before(
+    es: Elasticsearch,
+    *,
+    user_id: str,
+    before: str,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """The `limit` episodes immediately preceding `before`, oldest first.
+
+    These have already been consolidated. They are handed to the extractor as
+    synthesis context, never as material to extract from, because a fact can
+    exist across turns without existing in any single one: a customer mentions
+    a dog in one message and chewed cabling several messages later, and the
+    constraint is in neither alone.
+
+    Fetched newest-first so the `limit` most recent are the ones selected, then
+    reversed, because the consolidation prompt reasons about event order.
+    """
+    resp = es.search(
+        index=INDEX_EPISODIC,
+        body={
+            "size": limit,
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"user_id": user_id}},
+                        {"range": {"timestamp": {"lt": before}}},
+                    ]
+                }
+            },
+            "sort": [{"timestamp": "desc"}],
+            "_source": {"excludes": ["semantic_content"]},
+        },
+    )
+    rows = [
+        {"id": h["_id"], "source": h["_source"]}
+        for h in resp["hits"]["hits"]
+    ]
+    rows.reverse()
+    return rows
+
+
 __all__ = [
     "ensure_watermark",
+    "episodes_before",
     "episodes_since",
     "get_watermark",
     "set_watermark",
