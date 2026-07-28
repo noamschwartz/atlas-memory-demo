@@ -77,6 +77,8 @@ def write_memory(
     contradiction: str | None = None,
     allow_retraction: bool = True,
     pending_outcome: bool | None = None,
+    valid_from: str | None = None,
+    valid_to: str | None = None,
     refresh: bool = False,
 ) -> dict[str, str]:
     """Insert a memory document.
@@ -122,6 +124,16 @@ def write_memory(
             use_count=0,
             metadata=metadata or {},
         )
+        # Validity time: when the fact was true in the world, as distinct
+        # from created_at / superseded_at, which record when the system
+        # LEARNED it. The two coincide only if customers report changes
+        # immediately. Someone who moved in November and mentions it in
+        # January leaves a 14-month gap, and without these fields a
+        # point-in-time question is answered from the wrong interval.
+        if valid_from:
+            doc["valid_from"] = valid_from
+        if valid_to:
+            doc["valid_to"] = valid_to
         if pending_outcome is not None:
             # Marks a record of advice whose result was never established.
             # Queryable so a later pass can resolve it rather than having to

@@ -204,6 +204,42 @@ help?"*
 **Verified.** Twelve unit tests across both changes, plus a live check on the cluster: a turn
 ending on advice produced exactly one `world` fact with `pending_outcome` persisted.
 
+## A4d. Validity time: when a fact was true, not when we learned it
+
+`created_at` and `superseded_at` are **transaction time**. They record when the system learned
+something. They coincide with when it was actually true only if customers report changes
+immediately, and they do not.
+
+The concrete failure. A customer moves to Edinburgh in November 2024 and mentions it in January
+2026. The stored facts are "lives in Bristol" (`created_at` 2024-06, `superseded_at` 2026-01) and
+"lives in Edinburgh" (`created_at` 2026-01). Asked "where did I live in March 2025?", the only
+interval available is `[2024-06, 2026-01)`, which contains March 2025, so the answer is Bristol.
+She was in Edinburgh. The 14-month reporting lag is the entire error, and no amount of retrieval
+tuning fixes it, because the information needed was destroyed at extraction time.
+
+Semantic facts now carry optional `valid_from` and `valid_to` date fields. The extraction prompt
+sets them **only when the customer's own words date the fact** ("we moved last November", "I had a
+Hub v1 until March"), resolving relative expressions against the conversation's timestamps, and
+leaves them null rather than guessing. The agent can also set them directly through `write_memory`.
+
+Model-supplied dates are validated before they reach Elasticsearch: `YYYY-MM-DD` or `YYYY-MM` only,
+anything else dropped. An unparseable date would fail the whole write and lose every fact in the
+pass, and a fact without validity dates is still a useful fact.
+
+Both fields reach the agent in the recall payload, and the prompt now says to reason from them for
+any point-in-time question and never from `timestamp` or `superseded_at`. The `<context>` header,
+which previously told the agent to use `timestamp` for "when" questions, was corrected so the
+prompt does not contradict itself.
+
+**Breaking?** No. Two additive `date` fields, absent on every existing document. Note for later: a
+`range` filter on `valid_from` would silently exclude every pre-existing fact, so any future
+filtering needs a `must_not exists` fallback. Nothing filters on them today.
+
+**Verified.** Seventeen unit tests including the date-validation table, plus a live check: a
+customer stating "we moved to Edinburgh back in November 2024" produced a fact with
+`valid_from=2024-11-01` against `created_at=2026-07-28`, the twenty-month gap that previously
+produced wrong answers.
+
 ## A5. Retraction distinguished from prior state
 
 Supersession was being asked to represent two different things with one mechanism:
@@ -291,6 +327,7 @@ demo path writes to.
 | Assistant reply as consolidation context | No | No |
 | Cross-turn synthesis context | No | No |
 | Unconfirmed-advice records | No | No |
+| Validity time (valid_from / valid_to) | No | No |
 | Retraction vs prior state | No | No |
 | Procedural playbook round-trip | No (optional schema props) | No |
 | Confidence in recall payload | No | No |
@@ -299,7 +336,7 @@ demo path writes to.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 136 passing, 52 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 153 passing, 69 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step

@@ -143,6 +143,25 @@ def tool_schemas() -> list[dict[str, Any]]:
                                 "history, no penalty."
                             ),
                         },
+                        "valid_from": {
+                            "type": "string",
+                            "description": (
+                                "For semantic: ISO date (YYYY-MM-DD) when the "
+                                "fact became true in the real world, if the "
+                                "customer's own words say so ('we moved last "
+                                "November'). Distinct from when it is being "
+                                "recorded, which is captured automatically. "
+                                "Omit rather than guess."
+                            ),
+                        },
+                        "valid_to": {
+                            "type": "string",
+                            "description": (
+                                "For semantic: ISO date (YYYY-MM-DD) when the "
+                                "fact stopped being true, if stated ('I had a "
+                                "Hub v1 until March'). Omit rather than guess."
+                            ),
+                        },
                         # The three fields below exist so a PROCEDURAL write can
                         # actually carry a playbook. Without them the schema
                         # offered no way to express steps, so every
@@ -277,6 +296,14 @@ def dispatch(
             # ask rather than assume it worked.
             if src.get("pending_outcome"):
                 item["pending_outcome"] = True
+            # Validity time, when present: when the fact was true in the
+            # world, as opposed to `timestamp`, which is when it was
+            # recorded. Only a point-in-time question needs these, and
+            # answering one from the recording time gives the wrong span.
+            if src.get("valid_from"):
+                item["valid_from"] = src["valid_from"]
+            if src.get("valid_to"):
+                item["valid_to"] = src["valid_to"]
             # A procedural memory is its steps. The system prompt instructs the
             # agent to "follow its steps", but the compact payload carried only
             # `trigger_text`, so a recalled playbook arrived with nothing to
@@ -309,6 +336,8 @@ def dispatch(
             # Forwarded so a procedural write can carry its playbook; these were
             # absent from both the schema and this call, so agent-written
             # procedurals were always step-less.
+            valid_from=arguments.get("valid_from"),
+            valid_to=arguments.get("valid_to"),
             name=arguments.get("name"),
             description=arguments.get("description"),
             steps=arguments.get("steps"),

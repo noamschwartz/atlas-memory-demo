@@ -47,7 +47,9 @@ Return STRICT JSON (no commentary, no markdown fence):
       "supporting_episode_ids": ["<episode-id>", ...],
       "supersedes_id": "<id-of-existing-fact-this-replaces-or-null>",
       "contradiction": "natural" | "harsh",
-      "pending_outcome": true | false
+      "pending_outcome": true | false,
+      "valid_from": "<YYYY-MM-DD or null>",
+      "valid_to": "<YYYY-MM-DD or null>"
     }
   ],
   "new_procedures": [
@@ -99,6 +101,13 @@ RESOLVING IT LATER:
 - Facts in <existing_facts> shown as [pending] are advice whose outcome was never established.
 - If <recent_events> now confirms or rejects that advice, supersede the pending fact: set supersedes_id to it, contradiction "natural", and write the resolved version ("...; the customer confirmed this resolved the issue" or "...; the customer reported it did not help"). Set pending_outcome false on the new fact.
 - A confirmation is also the trigger for a procedural_update, so do both when the evidence supports it.
+
+WHEN A FACT BECAME TRUE (valid_from / valid_to):
+- These record when the fact was true IN THE WORLD. They are not the same as when the customer told you, which is recorded automatically.
+- Set them ONLY when the customer's own words date the fact. "We moved to Edinburgh last November" gives valid_from. "I had a Hub v1 until March" gives valid_to. "I moved" on its own gives neither: leave both null rather than guessing.
+- Resolve relative expressions against today's date, which is given in <recent_events> timestamps. "Last November" said in January 2026 means 2025-11.
+- Why this matters: a customer who moved in November but only mentions it in January leaves a 14-month gap between when a fact became true and when you learned it. Without valid_from, "where did I live in March?" is answered from the wrong interval.
+- When you supersede a fact because the customer's situation changed, set valid_to on nothing: the OLD fact's validity end is the NEW fact's valid_from. Just date the new one.
 
 FACTS:
 - DO NOT duplicate any existing fact — even paraphrases.
@@ -190,6 +199,24 @@ def _summarize_events(rows: list[dict[str, Any]]) -> str:
         ts = src.get("timestamp", "")
         out.append(f"- id={r['id']} role={role} ts={ts}\n  {src.get('text', '')}")
     return "\n".join(out)
+
+
+_DATE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")
+
+
+def _clean_date(value: Any) -> str | None:
+    """Accept YYYY-MM-DD or YYYY-MM from the model, reject anything else.
+
+    An unparseable date would be rejected by Elasticsearch and fail the whole
+    write, losing every fact in the pass. A fact without validity dates is still
+    a useful fact, so a bad value is dropped rather than raised.
+    """
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not _DATE_RE.match(value):
+        return None
+    return f"{value}-01" if len(value) == 7 else value
 
 
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
@@ -391,6 +418,8 @@ def consolidate(
             allow_retraction=False,
             pending_outcome=bool(fact.get("pending_outcome"))
             if fact.get("pending_outcome") is not None else None,
+            valid_from=_clean_date(fact.get("valid_from")),
+            valid_to=_clean_date(fact.get("valid_to")),
             refresh=True,
         )
         if old_id:

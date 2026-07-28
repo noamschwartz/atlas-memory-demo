@@ -21,6 +21,8 @@
       "supersedes":   { "type": "keyword" },
       "retracted":    { "type": "boolean" },
       "pending_outcome": { "type": "boolean" },
+      "valid_from":   { "type": "date" },
+      "valid_to":     { "type": "date" },
       "metadata":     { "type": "flattened" }
     }
   }
