@@ -104,3 +104,20 @@ CORE_MEMORY_DEDUP_THRESHOLD = 0.82
 # output scales with the number of episodes considered, so the ceiling has to
 # cover the catch-up and legacy-fallback cases, not the steady state.
 CONSOLIDATION_MAX_TOKENS = 4096
+
+# How many recent assistant turns are handed to consolidation as context.
+#
+# One turn is not enough, and the reason is a timing mismatch. The customer
+# confirms a fix one turn AFTER the advice was given ("it worked"), so at the
+# moment the confirmation arrives, the steps it refers to are in the PREVIOUS
+# reply. Passing only the current turn's reply means the extractor sees the
+# confirmation and the acknowledgement of it, never the procedure being
+# confirmed. Four turns covers the usual advise / try / report / confirm shape
+# with room to spare.
+CONSOLIDATION_ASSISTANT_CONTEXT_TURNS = 4
+
+# Character budget for that context. Replies run to a 2048-token ceiling, so
+# four of them unbounded could add ~30k characters to the consolidation prompt.
+# Oldest turns are dropped first when the budget binds, since the confirmation
+# a customer just gave refers to the most recent advice.
+CONSOLIDATION_ASSISTANT_CONTEXT_CHARS = 6000

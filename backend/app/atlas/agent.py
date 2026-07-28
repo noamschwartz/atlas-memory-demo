@@ -4,7 +4,9 @@ Each user turn:
   1. Persist the user message as an episodic memory (event_type=user_message).
   2. Run the LLM with the memory tools available; loop on tool calls up to
      MAX_ITERATIONS times.
-  3. Persist the final assistant message as episodic.
+  3. Consolidate, passing recent assistant prose as transient context. Agent
+     replies are deliberately NOT persisted as episodic memory; see the note
+     above the consolidation call for why.
   4. Yield structured SSE events to the caller for live UI rendering.
 """
 
@@ -20,7 +22,11 @@ from typing import Any
 from elasticsearch import Elasticsearch
 
 from .consolidate import consolidate
-from .memory.constants import LLM_INFERENCE_ID
+from .memory.constants import (
+    CONSOLIDATION_ASSISTANT_CONTEXT_CHARS,
+    CONSOLIDATION_ASSISTANT_CONTEXT_TURNS,
+    LLM_INFERENCE_ID,
+)
 from .memory.operations import core_memory, write_memory
 from .llm import StreamResult, stream_chat
 from .tools import dispatch, parse_arguments, tool_schemas
@@ -76,6 +82,51 @@ def _normalize_finish(finish: str | None) -> str:
     if finish in ("tool_calls", "function_call"):
         return "tool_calls"
     return finish or "stop"
+
+
+def _assistant_context(
+    history: list[dict[str, Any]],
+    current_turn_parts: list[str],
+) -> str | None:
+    """Recent assistant prose for consolidation, oldest first. Never stored.
+
+    Drawn from the conversation history the client sends plus the reply just
+    produced. History is the only place earlier replies exist, because they are
+    deliberately not written to the episodic index.
+
+    The span matters. A customer confirms a fix one turn after receiving it, so
+    when "it worked" lands, the steps it refers to are in the *previous* reply.
+    Passing only the current reply would show the extractor the confirmation and
+    the acknowledgement of it, and never the procedure being confirmed, which is
+    exactly the case procedural extraction needs.
+
+    History is client-supplied and unvalidated, so entries are filtered
+    defensively and the result is bounded by both turn count and characters.
+    """
+    turns: list[str] = []
+    for msg in history or []:
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        content = msg.get("content")
+        if isinstance(content, str) and content.strip():
+            turns.append(content.strip())
+
+    current = "\n\n".join(p for p in current_turn_parts if p.strip()).strip()
+    if current:
+        turns.append(current)
+
+    if not turns:
+        return None
+
+    turns = turns[-CONSOLIDATION_ASSISTANT_CONTEXT_TURNS:]
+    # Drop from the oldest end when the budget binds: a confirmation refers to
+    # the most recent advice, so recency is what has to survive truncation.
+    while len(turns) > 1 and sum(len(t) for t in turns) > CONSOLIDATION_ASSISTANT_CONTEXT_CHARS:
+        turns.pop(0)
+    if len(turns) == 1 and len(turns[0]) > CONSOLIDATION_ASSISTANT_CONTEXT_CHARS:
+        turns[0] = turns[0][-CONSOLIDATION_ASSISTANT_CONTEXT_CHARS:]
+
+    return "\n\n--- next assistant turn ---\n\n".join(turns)
 
 
 def _format_core_memory(facts: list[dict[str, Any]]) -> str:
@@ -330,7 +381,7 @@ def run_turn(
             es,
             user_id=user_id,
             # Transient. Used to interpret this turn's episodes, never stored.
-            assistant_context="\n\n".join(assistant_turn_parts).strip() or None,
+            assistant_context=_assistant_context(history, assistant_turn_parts),
         )
         for item in result.get("created", []):
             yield {

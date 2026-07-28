@@ -136,10 +136,18 @@ longest, most tool-heavy turns.
 and the parameter is optional, so callers that omit it (`routes/memory.py`, `stress_test.py`) get
 the previous behaviour exactly.
 
-**Known limitation.** Only the current turn's reply is available, because earlier replies were
-never stored. With the watermark active a pass normally covers one new episode, so this is
-usually complete. On the legacy fallback path, which processes a wider window, the context covers
-only the most recent exchange.
+**Why it spans several turns.** A single turn is not enough, because of a timing mismatch. A
+customer confirms a fix one turn *after* receiving it. When "it worked" arrives, the steps it
+refers to are in the *previous* reply, so a single-turn context would show the extractor the
+confirmation and the acknowledgement of it, and never the procedure being confirmed. The context
+is therefore drawn from the client's conversation history plus the reply just produced, bounded by
+`CONSOLIDATION_ASSISTANT_CONTEXT_TURNS` (4) and `CONSOLIDATION_ASSISTANT_CONTEXT_CHARS` (6000).
+Oldest turns are dropped first when the budget binds, since a confirmation refers to the most
+recent advice. History is client-supplied and unvalidated, so entries are filtered defensively.
+
+**Known limitation.** History is browser state. If the customer closes the tab between receiving
+advice and confirming it, the advice is gone and the confirmation cannot be grounded. Closing that
+properly means persisting the reply, which is the thing this design deliberately does not do.
 
 **Verified.** Six unit tests pin both halves of the contract: the reply is rendered into the
 prompt and lands in its own block rather than in `<recent_events>`, and it never appears in any
@@ -239,7 +247,7 @@ demo path writes to.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 120 passing, 36 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 124 passing, 40 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step

@@ -113,6 +113,66 @@ def test_omitting_the_argument_preserves_previous_behaviour(captured):
     assert "(none)" in captured["prompt"]
 
 
+def test_context_spans_several_turns_so_a_confirmation_finds_its_advice(captured):
+    """The case this exists for.
+
+    A customer confirms a fix one turn AFTER receiving it. When "it worked"
+    lands, the steps it refers to are in the PREVIOUS reply, so a single-turn
+    context would show the extractor the confirmation and the acknowledgement of
+    it, and never the procedure being confirmed.
+    """
+    from app.atlas.agent import _assistant_context
+
+    history = [
+        {"role": "user", "content": "my hub keeps dropping devices"},
+        {"role": "assistant", "content": "Power-cycle the hub for 90 seconds, then re-pair."},
+        {"role": "user", "content": "it worked"},
+    ]
+    ctx = _assistant_context(history, ["Great, glad that sorted it."])
+    assert "Power-cycle the hub for 90 seconds" in ctx, "the advice being confirmed must be present"
+    assert "Great, glad that sorted it." in ctx, "the current reply is included too"
+    assert ctx.index("Power-cycle") < ctx.index("Great, glad"), "oldest first"
+
+
+def test_assistant_context_ignores_user_turns_and_malformed_entries():
+    """History is client-supplied and unvalidated."""
+    from app.atlas.agent import _assistant_context
+
+    history = [
+        {"role": "user", "content": "USER_TEXT"},
+        {"role": "system", "content": "SYSTEM_TEXT"},
+        "not-a-dict",
+        {"role": "assistant"},
+        {"role": "assistant", "content": ""},
+        {"role": "assistant", "content": 12345},
+        {"role": "assistant", "content": "KEEP_ME"},
+    ]
+    ctx = _assistant_context(history, [])
+    assert ctx == "KEEP_ME"
+
+
+def test_assistant_context_is_bounded_and_drops_oldest_first():
+    from app.atlas.agent import _assistant_context
+    from app.atlas.memory.constants import (
+        CONSOLIDATION_ASSISTANT_CONTEXT_CHARS,
+        CONSOLIDATION_ASSISTANT_CONTEXT_TURNS,
+    )
+
+    history = [{"role": "assistant", "content": f"turn-{i} " + "x" * 50} for i in range(12)]
+    ctx = _assistant_context(history, [])
+    assert ctx.count("--- next assistant turn ---") == CONSOLIDATION_ASSISTANT_CONTEXT_TURNS - 1
+    assert "turn-11" in ctx and "turn-0" not in ctx, "keeps the newest turns"
+
+    big = [{"role": "assistant", "content": "y" * 5000} for _ in range(4)]
+    assert len(_assistant_context(big, [])) <= CONSOLIDATION_ASSISTANT_CONTEXT_CHARS + 5000
+
+
+def test_assistant_context_is_none_when_there_is_nothing():
+    from app.atlas.agent import _assistant_context
+    assert _assistant_context([], []) is None
+    assert _assistant_context([{"role": "user", "content": "hi"}], []) is None
+
+
 def test_blank_context_renders_as_none(captured):
     es = _FakeES(episodes=[_episode()])
     consolidate(es, user_id="sarah", dry_run=True, assistant_context="   ")

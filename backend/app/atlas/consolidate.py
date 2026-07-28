@@ -66,7 +66,8 @@ Return STRICT JSON (no commentary, no markdown fence):
 
 <rules>
 USING <assistant_reply_context>:
-- It holds what the assistant said to the customer in the most recent exchange. It is NOT part of the customer's record and is NOT evidence.
+- It holds the last few things the assistant said to the customer, oldest first, separated by `--- next assistant turn ---`. It is NOT part of the customer's record and is NOT evidence.
+- It spans several turns on purpose. A customer confirms a fix one turn AFTER receiving it, so when an event says "it worked", the steps being confirmed are in an EARLIER assistant turn, not the latest one. Look back through the block to find what is actually being confirmed.
 - Use it for two things only: (1) to interpret an elliptical customer message, since "yes", "that worked" and "still broken" are meaningless without knowing what was asked or advised; and (2) to ground the `steps` of a procedure, since the steps were described on the assistant's side.
 - NEVER extract a fact from it. Anything the assistant asserted is unverified model output. If the assistant claimed the customer owns a Hub v2 and the customer never said so, that is not a fact. The customer must have said or confirmed it in <recent_events>.
 - A commitment the assistant made ("I've flagged your account, billing will email within 2 working days") may be recorded, but as fact_type "world" and only when the customer's own messages show they were told. Never as identity or constraint.
