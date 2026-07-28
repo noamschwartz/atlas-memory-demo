@@ -74,6 +74,13 @@ Return STRICT JSON (no commentary, no markdown fence):
 </output_format>
 
 <rules>
+RULE ZERO, ABOVE ALL OTHERS: ONLY THE CUSTOMER'S OWN WORDS BECOME FACTS.
+- A fact may be extracted ONLY if the customer stated or confirmed it in <recent_events>. Nothing else in this prompt is evidence.
+- The assistant is NOT a source of truth about the customer, even when it sounds authoritative. If the assistant said "your hub is on firmware 4.7.2", "you're on the Premium tier", "your account shows three properties", or anything else the customer did not say themselves, that is UNVERIFIED MODEL OUTPUT. It may be a lookup; it may be a hallucination. You cannot tell them apart, and neither can anything downstream.
+- Never write such a claim as a fact about the customer. "The customer is on the Premium tier" is FORBIDDEN when only the assistant said it. Never as identity. Never as constraint. Not as world either.
+- The only permitted way to record something the assistant said is to attribute it explicitly, as fact_type "world", phrased "The assistant told the customer X" or "The assistant advised X". Never "The customer's X is Y".
+- If in doubt, extract nothing. A missing fact is recoverable next time the customer mentions it. A fabricated one is repeated back to them as though they said it, and hardens every time it is recalled.
+
 USING <earlier_events>:
 - These are the customer's own earlier messages. They have ALREADY been consolidated, so do not re-extract facts from them.
 - Use them to spot facts that exist across turns but in no single turn. If the customer mentioned a dog in one message and chewed cabling in another, the durable constraint ("mounts sensors high because the dog chews cable") is in neither message alone and should be extracted once you can see both.
@@ -199,6 +206,70 @@ def _summarize_events(rows: list[dict[str, Any]]) -> str:
         ts = src.get("timestamp", "")
         out.append(f"- id={r['id']} role={role} ts={ts}\n  {src.get('text', '')}")
     return "\n".join(out)
+
+
+_TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9.\-]*[a-z0-9]|[a-z0-9]")
+
+
+def _distinctive(text: str) -> set[str]:
+    """Tokens specific enough that sharing one implies shared content.
+
+    Version strings and identifiers ("4.7.2") count at any length; ordinary
+    words need five characters, which drops articles and glue without needing a
+    stopword list to maintain.
+    """
+    out = set()
+    for tok in _TOKEN_RE.findall((text or "").lower()):
+        if any(c.isdigit() for c in tok) or len(tok) >= 5:
+            out.add(tok)
+    return out
+
+
+def _drop_ungrounded(
+    candidates: list[dict[str, Any]],
+    episodes: list[dict[str, Any]],
+    assistant_context: str | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Remove facts asserting content only the assistant supplied.
+
+    The prompt forbids this, but a prompt rule is probabilistic and this
+    particular rule is the one guarding against model output being laundered
+    into the customer's record and then recalled back as something they said.
+    Measured on the extraction eval, the instruction alone held about a third of
+    the time. A guardrail that matters gets enforced in code.
+
+    A candidate is dropped when it contains a distinctive token that appears in
+    the assistant's prose and in none of the customer's messages. Facts that
+    attribute explicitly ("the assistant advised X") are the permitted form and
+    are kept.
+    """
+    if not assistant_context or not candidates:
+        return candidates, []
+
+    episode_tokens = _distinctive(" ".join((e["source"].get("text") or "") for e in episodes))
+    assistant_only = _distinctive(assistant_context) - episode_tokens
+    if not assistant_only:
+        return candidates, []
+
+    kept, dropped = [], []
+    for fact in candidates:
+        text = (fact.get("text") or "")
+        if "assistant" in text.lower():
+            kept.append(fact)
+            continue
+        leaked = sorted(_distinctive(text) & assistant_only)
+        # One shared ordinary word is coincidence: an assistant saying "watch it
+        # for a few nights" should not veto a fact about the customer's sensor.
+        # Drop on a version-like token (a strong identifier the customer never
+        # uttered) or on several shared words, which is content rather than
+        # vocabulary.
+        strong = any(c.isdigit() for tok in leaked for c in tok)
+        if leaked and (strong or len(leaked) >= 2):
+            fact = {**fact, "_dropped_because": leaked}
+            dropped.append(fact)
+        else:
+            kept.append(fact)
+    return kept, dropped
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")
@@ -367,6 +438,13 @@ def consolidate(
         }
 
     candidates: list[dict[str, Any]] = parsed.get("new_facts", []) or []
+    candidates, ungrounded = _drop_ungrounded(candidates, episodes, assistant_context)
+    if ungrounded:
+        logger.warning(
+            "consolidate: dropped %d fact(s) asserting assistant-only content for %s: %s",
+            len(ungrounded), user_id,
+            [(f.get("text", "")[:60], f.get("_dropped_because")) for f in ungrounded],
+        )
     new_procedures: list[dict[str, Any]] = parsed.get("new_procedures", []) or []
     procedural_updates: list[dict[str, Any]] = parsed.get("procedural_updates", []) or []
 

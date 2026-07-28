@@ -318,6 +318,88 @@ demo path writes to.
 
 ---
 
+## Extraction eval
+
+`eval_recall.py` measures `P(retrieved | written)`. It samples documents that are already in the
+index, so a fact that was never extracted is never sampled and never scored. Everything above
+about what consolidation should capture was, until now, an assumption.
+
+`scripts/atlas/eval_extraction.py` measures the other half, `P(written | said)`.
+
+**Design.** Fourteen hand-written scenarios, each a short conversation plus an assertion over what
+consolidation should produce from it. Four properties make it cheap and trustworthy:
+
+- **Extraction runs with `dry_run=True`**, which returns candidates without writing. The
+  measurement never mutates the corpus, so it cannot contaminate the retrieval benchmark.
+- **Ground truth is hand-written**, following the `needles.py` precedent. Generating fixtures with
+  an LLM would mean the thing being tested and the thing defining correctness come from the same
+  model.
+- **Most assertions are deterministic.** A judge is used only where the question is genuinely
+  semantic. The guardrail scenarios, which matter most, need no judge at all.
+- **A dedicated user id** that no demo path writes to, wiped in a `finally`.
+
+Each scenario runs three times, because LLM output is not deterministic and one sample is not a
+measurement. Scoring is per dimension rather than one number, and **attribution safety gates at
+100%**: one leak is the memory-poisoning failure the whole design exists to prevent.
+
+### It found a real bug on its first run
+
+Given a customer message ("my hub keeps going offline") and an assistant reply asserting account
+details the customer never mentioned, consolidation produced:
+
+```
+fact_type=identity   "The customer is on the Premium tier with three registered properties."
+fact_type=world      "The customer's hub is running firmware 4.7.2."
+```
+
+Both stated as customer facts. The first typed `identity`, which puts it in the always-in-context
+block on every future turn. This is exactly the laundering the design forbids, and the prompt rule
+against it was already present and being ignored.
+
+Two fixes. A **Rule Zero** at the top of the extraction rules, stating categorically that only the
+customer's own words become facts and that an authoritative-sounding assistant lookup is still
+unverified model output. That took it from 0/1 to 1/3, which is not good enough for a guardrail.
+
+So the enforcement moved into code. `_drop_ungrounded` removes any candidate containing a
+distinctive token that appears in the assistant's prose and in none of the customer's messages.
+Explicitly attributed facts ("the assistant advised X") are the permitted form and are kept. Drops
+are logged with the offending tokens so they stay auditable.
+
+The guard needed one correction of its own: it initially killed a legitimate fact because the
+assistant had said "watch it for three nights" and the word "nights" was treated as content. It now
+drops on a version-like token, which the customer demonstrably never uttered, or on two or more
+shared words, which is content rather than vocabulary.
+
+**One honest note on method.** The attribution assertion was rewritten after seeing the first
+results. It originally failed on the mere presence of the words, which also failed the *permitted*
+attributed form. The corrected assertion encodes the design's actual rule (never as an
+unattributed customer claim, never as `identity`/`constraint`) rather than being loosened to pass.
+
+### Results
+
+All fourteen scenarios pass 3/3, every dimension at 1.00.
+
+Against the pre-Release-1 revision, on the ten scenarios both can be scored on:
+
+| scenario | before | after |
+|---|---|---|
+| elliptical_confirmation | 0/3 | **3/3** |
+| fact_type_accuracy | 0/3 | **3/3** |
+| harsh_denial | 0/3 | **3/3** |
+| the other seven | 3/3 | 3/3 |
+| **mean pass rate** | **0.70** | **1.00** |
+
+Each failure maps to a specific change: "that worked" produced nothing without the assistant
+context; harsh contradictions could not be expressed from the consolidation path; and a transient
+status was being typed as `identity`, which would have put it in the always-in-context block.
+
+Four further scenarios (`pending_advice`, `pending_resolved`, `dated_fact`, `undated_change`) pass
+3/3 but have no baseline, because they test capabilities that did not previously exist. Those are
+new capability, not improvement, and are reported separately for that reason.
+
+**Not gated in CI.** It needs a live cluster and inference spend, so it is a pre-release check, not
+a per-PR one. Saying so plainly rather than implying otherwise.
+
 ## Change summary
 
 | Change | Breaking? | Needs ops step? |
@@ -328,6 +410,8 @@ demo path writes to.
 | Cross-turn synthesis context | No | No |
 | Unconfirmed-advice records | No | No |
 | Validity time (valid_from / valid_to) | No | No |
+| Attribution guard (_drop_ungrounded) | No | No |
+| Extraction eval | No (script only) | No |
 | Retraction vs prior state | No | No |
 | Procedural playbook round-trip | No (optional schema props) | No |
 | Confidence in recall payload | No | No |
@@ -336,7 +420,7 @@ demo path writes to.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 153 passing, 69 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 166 passing, 82 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step
