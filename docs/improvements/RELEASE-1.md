@@ -88,6 +88,64 @@ unwritable store must yield `None`, never a timestamp, because treating an unava
 "now" would match no episodes and silently disable consolidation altogether. Confirmed end-to-end
 against a cluster where the index does not yet exist.
 
+## A4. Context without ingestion: the assistant's reply reaches consolidation
+
+Episodic memory holds what the **customer** asserted. Assistant replies are not written to it, and
+that is deliberate. The episodic index is the ground-truth tier: once a model's claim is stored as
+an event, every later turn treats it as something the customer said, and repetition hardens it.
+Keeping model prose out also keeps it out of the candidate pool that gets cross-encoded on every
+recall. Durable knowledge from the agent's side is meant to earn its way in through consolidation,
+where it arrives typed, with a confidence score and provenance.
+
+**What was wrong.** Consolidation could not see the assistant's side at all, and it needs to for
+two specific jobs the prompt already asks of it.
+
+The first is interpreting the customer. A dialogue turn is frequently elliptical: "yes", "that
+worked", "still nothing" carry no information without the question or the advice they answer. The
+second is procedure extraction. The prompt asks for playbooks with a `steps` array and for
+detection of "a complete multi-step resolution", but the steps are described on the agent's side.
+Extraction was being asked to reconstruct advice from the half of the conversation that did not
+contain it.
+
+**The change.** The prose the agent produced during a turn is passed to `consolidate()` as
+transient context. It is rendered in its own `<assistant_reply_context>` block, kept separate from
+`<recent_events>`, and then discarded. It is never indexed, never citable, and never itself a
+fact. The prompt states this explicitly:
+
+> Use it to interpret an elliptical customer message and to ground a procedure's steps. Never
+> extract a fact from it: anything the assistant asserted is unverified model output.
+> `supporting_episode_ids` must cite ids from `<recent_events>`, and the context has no ids.
+
+A commitment the agent made ("I've flagged your account, billing will email within two working
+days") may be recorded, but only as `fact_type: "world"`, which is retrieval-gated and excluded
+from the core-memory block. Never as `identity` or `constraint`.
+
+**Reading both roles while attributing facts to only one** is the established shape for this.
+Zep exposes it as `ignore_roles`: the ignored role is skipped for graph ingestion but is still
+used to contextualise the messages that are ingested. Mem0's extractor likewise receives the full
+user-and-assistant message pair while its prompt constrains what may be attributed as fact.
+
+**A latent bug fixed on the way.** The assistant's prose was being captured into a variable that
+was assigned only in one branch of the agent loop, so it was empty whenever a turn exhausted
+`MAX_ITERATIONS`, and it discarded any prose emitted alongside tool calls in earlier iterations.
+It is now accumulated across iterations. The variable was previously unused, so this had no
+visible effect before now, but it would have silently produced empty context on exactly the
+longest, most tool-heavy turns.
+
+**Breaking?** No. Nothing is written to any index, no mapping changes, no retrieval path changes,
+and the parameter is optional, so callers that omit it (`routes/memory.py`, `stress_test.py`) get
+the previous behaviour exactly.
+
+**Known limitation.** Only the current turn's reply is available, because earlier replies were
+never stored. With the watermark active a pass normally covers one new episode, so this is
+usually complete. On the legacy fallback path, which processes a wider window, the context covers
+only the most recent exchange.
+
+**Verified.** Six unit tests pin both halves of the contract: the reply is rendered into the
+prompt and lands in its own block rather than in `<recent_events>`, and it never appears in any
+indexed document. Plus the prompt guard rails and backwards compatibility for callers that pass
+nothing.
+
 ## A5. Retraction distinguished from prior state
 
 Supersession was being asked to represent two different things with one mechanism:
@@ -172,6 +230,7 @@ demo path writes to.
 |---|---|---|
 | Core memory tier | No | No |
 | Consolidation watermark | No (degrades without it) | **Yes**, create `atlas_memory_state`, grant app key r/w |
+| Assistant reply as consolidation context | No | No |
 | Retraction vs prior state | No | No |
 | Procedural playbook round-trip | No (optional schema props) | No |
 | Confidence in recall payload | No | No |
@@ -180,7 +239,7 @@ demo path writes to.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 114 passing, 30 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 120 passing, 36 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step

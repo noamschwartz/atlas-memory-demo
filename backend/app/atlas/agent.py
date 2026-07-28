@@ -213,7 +213,15 @@ def run_turn(
         "content": json.dumps(pre_recall_result),
     })
 
-    final_assistant_text = ""
+    # Prose the assistant produced this turn, accumulated across iterations.
+    #
+    # This is NOT persisted. It is handed to consolidation as transient context
+    # so the extractor can interpret what the customer said against what was
+    # actually said to them. Assigning it once at the break below would lose two
+    # cases: prose emitted alongside tool calls in earlier iterations, and every
+    # turn that exhausts MAX_ITERATIONS without a clean finish (the `else` branch
+    # further down), where text was streamed to the user but never captured.
+    assistant_turn_parts: list[str] = []
 
     for iteration in range(1, MAX_ITERATIONS + 1):
         result = StreamResult()
@@ -254,8 +262,10 @@ def run_turn(
             assistant_msg["content"] = ""
         messages.append(assistant_msg)
 
+        if result.text:
+            assistant_turn_parts.append(result.text)
+
         if finish != "tool_calls" or not result.tool_calls:
-            final_assistant_text = result.text
             break
 
         # Dispatch each tool call in order; surface result as a tool message.
@@ -293,10 +303,22 @@ def run_turn(
     else:
         logger.warning("Atlas hit MAX_ITERATIONS=%s without finishing", MAX_ITERATIONS)
 
-    # Agent replies are intentionally NOT persisted as episodic memory:
-    # they're already in the conversation history passed back to the LLM,
-    # and they would otherwise pollute recall (long assistant prose dominates
-    # BM25). Consolidation (Phase 5) is what distills durable knowledge.
+    # Agent replies are intentionally NOT persisted as episodic memory.
+    #
+    # The episodic index holds what the CUSTOMER asserted. It is the
+    # ground-truth tier, and unverified model output does not belong in it:
+    # once a model's claim is stored as an event, every later turn treats it as
+    # something the customer said, and it hardens through repetition. Durable
+    # knowledge from the agent's side earns its way in through consolidation
+    # instead, where it arrives typed, with a confidence score and provenance.
+    # Keeping assistant prose out of the index also keeps it out of the
+    # candidate pool that gets cross-encoded on every recall.
+    #
+    # The reply is still handed to consolidation as CONTEXT (below), because
+    # extraction has to be able to interpret an elliptical user turn - "yes",
+    # "that worked", "still broken" - against what was actually said to them,
+    # and because procedural steps are described on the agent's side. Context
+    # without ingestion is the same split Zep exposes as `ignore_roles`.
 
     yield {"event": "done", "turn_id": turn_id}
 
@@ -304,7 +326,12 @@ def run_turn(
     # shows new facts/procedures as soon as the stream closes.
     yield {"event": "consolidation_start"}
     try:
-        result = consolidate(es, user_id=user_id)
+        result = consolidate(
+            es,
+            user_id=user_id,
+            # Transient. Used to interpret this turn's episodes, never stored.
+            assistant_context="\n\n".join(assistant_turn_parts).strip() or None,
+        )
         for item in result.get("created", []):
             yield {
                 "event": "consolidation_fact",

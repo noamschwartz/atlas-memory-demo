@@ -65,6 +65,13 @@ Return STRICT JSON (no commentary, no markdown fence):
 </output_format>
 
 <rules>
+USING <assistant_reply_context>:
+- It holds what the assistant said to the customer in the most recent exchange. It is NOT part of the customer's record and is NOT evidence.
+- Use it for two things only: (1) to interpret an elliptical customer message, since "yes", "that worked" and "still broken" are meaningless without knowing what was asked or advised; and (2) to ground the `steps` of a procedure, since the steps were described on the assistant's side.
+- NEVER extract a fact from it. Anything the assistant asserted is unverified model output. If the assistant claimed the customer owns a Hub v2 and the customer never said so, that is not a fact. The customer must have said or confirmed it in <recent_events>.
+- A commitment the assistant made ("I've flagged your account, billing will email within 2 working days") may be recorded, but as fact_type "world" and only when the customer's own messages show they were told. Never as identity or constraint.
+- supporting_episode_ids must always cite ids from <recent_events>. The assistant context has no ids and can never be cited.
+
 FACTS:
 - DO NOT duplicate any existing fact — even paraphrases.
 - Only extract DURABLE facts (preferences, identity, constraints), NOT one-off questions or transient mentions.
@@ -105,6 +112,10 @@ PROCEDURES:
 <recent_events>
 %(events)s
 </recent_events>
+
+<assistant_reply_context>
+%(assistant_context)s
+</assistant_reply_context>
 """
 
 
@@ -173,8 +184,23 @@ def consolidate(
     lookback: int = 30,
     dry_run: bool = False,
     inference_id: str = LLM_INFERENCE_ID_FAST,
+    assistant_context: str | None = None,
 ) -> dict[str, Any]:
     """Run one consolidation pass for a user.
+
+    `assistant_context` is the prose the agent produced in the exchange that
+    triggered this pass. It is shown to the extractor and then discarded: it is
+    never indexed, never cited as a source, and never itself a fact.
+
+    Extraction needs it because the customer's half of a dialogue is frequently
+    elliptical. "Yes", "that worked", "still nothing" carry no information
+    without the question or the advice they answer, and a procedure's steps are
+    described on the agent's side, not the customer's. Reading both sides while
+    attributing facts to only one is the same split Zep exposes as
+    `ignore_roles`: the ignored role still contextualises, it just does not
+    become memory.
+
+    Optional, and callers that omit it get the previous behaviour exactly.
 
     Returns: {"candidates": [...], "created": [...], "dry_run": bool}
     """
@@ -222,6 +248,7 @@ def consolidate(
         "existing": _summarize_existing(existing),
         "procedures": _summarize_procedurals(procedurals),
         "events": _summarize_events(episodes),
+        "assistant_context": (assistant_context or "").strip() or "(none)",
     }
 
     raw = complete_chat(
