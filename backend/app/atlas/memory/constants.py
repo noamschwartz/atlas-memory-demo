@@ -133,3 +133,24 @@ CONSOLIDATION_ASSISTANT_CONTEXT_CHARS = 6000
 # the per-turn reprocessing cost the watermark removed, because these episodes
 # are read for context, not re-extracted.
 CONSOLIDATION_CONTEXT_EPISODES = 12
+
+# Retrieval-backed dedup.
+#
+# Handing the extractor a recency-ordered slice of existing facts is a window,
+# and a window has a cliff: the fact one position past the limit is invisible,
+# so it can be neither deduplicated against nor superseded. That cliff is not
+# theoretical. The seeded corpus measured 28 near-duplicate pairs across 197
+# live facts, including byte-identical copies of seeded facts, because the
+# window was smaller than the corpus.
+#
+# So each candidate fact is also checked against its nearest existing
+# neighbours, found with the same hybrid retriever the agent uses for recall.
+# Nearest by meaning rather than by age, which removes the cliff entirely and
+# catches the case a recency window structurally cannot: two facts that
+# contradict each other while sharing almost no vocabulary.
+DEDUP_NEIGHBOUR_K = 5
+
+# Token-overlap above which two facts are the same fact and no LLM call is
+# needed. Deliberately high: this path drops a candidate outright, so it must
+# only fire on near-identical text. Anything below goes to a judgment call.
+DEDUP_CERTAIN_SIMILARITY = 0.85

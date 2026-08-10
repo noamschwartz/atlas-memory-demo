@@ -240,6 +240,51 @@ customer stating "we moved to Edinburgh back in November 2024" produced a fact w
 `valid_from=2024-11-01` against `created_at=2026-07-28`, the twenty-month gap that previously
 produced wrong answers.
 
+## A6. Retrieval-backed deduplication
+
+Consolidation showed the extractor a recency-ordered slice of existing facts and told it not to
+duplicate them. That is a window, and a window has a cliff: the fact one position past the limit is
+invisible, so it can be neither deduplicated against nor superseded.
+
+The cliff was not theoretical. The seeded corpus measured 28 near-duplicate pairs across 197 live
+facts, including byte-identical copies of seeded facts, because the window was smaller than the
+corpus. Raising the limit moved the cliff; it did not remove it.
+
+A recency window also cannot catch the case that matters most. "The customer prefers email" and
+"The customer asked us to stop emailing" contradict each other while sharing almost no vocabulary.
+Neither ordering by age nor a lexical scan will ever put those two side by side.
+
+**The change.** Every candidate fact is now additionally checked against its nearest existing
+facts, retrieved with the same hybrid searcher the agent uses at recall time. Nearest by meaning
+rather than by age. Three outcomes per candidate:
+
+- **duplicate**: already held, so drop it
+- **update**: contradicts or replaces a neighbour, so keep it and attach the `supersedes_id` the
+  extractor failed to set
+- **distinct**: genuinely new, keep it unchanged
+
+Near-identical text short-circuits to duplicate with no LLM call. Everything else is decided by a
+single batched judgment covering all remaining candidates, so the cost is one extra call per
+consolidation pass rather than one per candidate. With the watermark active, most turns produce no
+candidates and therefore no cost at all.
+
+**Two safety properties worth stating.** A verdict citing an id that was not in the retrieved
+neighbour set is ignored, because attaching `supersedes_id` to a hallucinated id would silently
+hide an unrelated fact from every future recall. And if the judgment call fails, every candidate is
+kept: a missed duplicate is recoverable next time, discarding a real fact is not.
+
+This is the design the original post described as the production architecture and disclosed as not
+yet built. It is now built.
+
+**Breaking?** No. One retrieval per candidate plus one batched judgment, both on the write path.
+No schema change, no retrieval change, no contract change.
+
+**Verified.** Seventeen unit tests covering the near-identical short circuit, all three verdicts,
+hallucinated-id rejection, judge-failure behaviour, and the batching guarantee. A new eval scenario
+covers the semantic-contradiction case. Plus a live demonstration: a fact written 900 days ago and
+buried under 40 more recent ones was correctly identified as a duplicate, which the previous
+recency window could not have done.
+
 ## A5. Retraction distinguished from prior state
 
 Supersession was being asked to represent two different things with one mechanism:
@@ -409,6 +454,7 @@ a per-PR one. Saying so plainly rather than implying otherwise.
 | Assistant reply as consolidation context | No | No |
 | Cross-turn synthesis context | No | No |
 | Unconfirmed-advice records | No | No |
+| Retrieval-backed deduplication | No | No |
 | Validity time (valid_from / valid_to) | No | No |
 | Attribution guard (_drop_ungrounded) | No | No |
 | Extraction eval | No (script only) | No |
@@ -420,7 +466,7 @@ a per-PR one. Saying so plainly rather than implying otherwise.
 | Recall stat-bump refresh | No | No |
 | Benchmark harness | No (script only) | No |
 
-**Tests:** 166 passing, 82 new. **End-to-end:** 26/26 against a live cluster via
+**Tests:** 183 passing, 99 new. **End-to-end:** 26/26 against a live cluster via
 `scripts/atlas/verify_release1.py`, which uses a throwaway user and cleans up after itself.
 
 ## Provisioning step

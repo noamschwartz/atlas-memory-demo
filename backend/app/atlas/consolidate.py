@@ -21,6 +21,7 @@ from .memory.constants import (
     CONSOLIDATION_MAX_TOKENS,
     LLM_INFERENCE_ID_FAST,
 )
+from .dedup import deduplicate
 from .memory.operations import list_memories, update_procedural, write_memory
 from .memory.state import (
     ensure_watermark,
@@ -445,6 +446,27 @@ def consolidate(
             len(ungrounded), user_id,
             [(f.get("text", "")[:60], f.get("_dropped_because")) for f in ungrounded],
         )
+    # Retrieval-backed dedup. The recency slice above is a window, and the fact
+    # one position past it is invisible to the extractor. This checks each
+    # candidate against its nearest existing facts by meaning rather than age,
+    # which removes that cliff and catches contradictions that share no
+    # vocabulary with the fact they contradict.
+    candidates, duplicates, linked = deduplicate(
+        es, user_id=user_id, candidates=candidates, inference_id=inference_id
+    )
+    if duplicates:
+        logger.info(
+            "consolidate: dropped %d duplicate fact(s) for %s: %s",
+            len(duplicates), user_id,
+            [(f.get("text", "")[:50], f.get("_reason"), f.get("_duplicate_of")) for f in duplicates],
+        )
+    if linked:
+        logger.info(
+            "consolidate: attached supersedes_id the extractor missed, for %d fact(s) for %s: %s",
+            len(linked), user_id,
+            [(f.get("text", "")[:50], f.get("supersedes_id")) for f in linked],
+        )
+
     new_procedures: list[dict[str, Any]] = parsed.get("new_procedures", []) or []
     procedural_updates: list[dict[str, Any]] = parsed.get("procedural_updates", []) or []
 
@@ -454,6 +476,8 @@ def consolidate(
             "created": [],
             "new_procedures": new_procedures,
             "procedural_updates": procedural_updates,
+            "duplicates_dropped": len(duplicates),
+            "supersessions_recovered": len(linked),
             "dry_run": True,
         }
 

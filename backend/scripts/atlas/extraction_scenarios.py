@@ -214,6 +214,21 @@ SCENARIOS: list[Scenario] = [
         note="already known. GUARDRAIL.",
     ),
     Scenario(
+        key="semantic_contradiction",
+        dimension="dedup",
+        episodes=["please stop sending me emails, just ring me instead"],
+        existing_facts=[{
+            "text": "The customer prefers to be contacted by email.",
+            "fact_type": "preference",
+        }],
+        expect=_has_fact_where(
+            lambda f: bool(f.get("supersedes_id")),
+            "a supersession of the contradicted preference",
+        ),
+        comparable=False,
+        note="the two facts share almost no vocabulary, so only retrieval pairs them",
+    ),
+    Scenario(
         key="chitchat",
         dimension="dedup",
         episodes=["thanks!", "ok great", "cheers, bye"],
