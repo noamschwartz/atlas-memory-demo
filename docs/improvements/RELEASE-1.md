@@ -34,18 +34,28 @@ calls core memory, and that file-backed agent setups get from a static profile d
 are now selected by a filtered term query (no vector search), deduplicated, and injected into a
 `<customer_profile>` block in the system prompt, capped at `CORE_MEMORY_LIMIT`.
 
-Two selection decisions are load-bearing:
+Slots are filled from three directions, because any single ordering has a blind spot. Newest-first
+lets consolidation churn evict foundational facts. Oldest-first buries what the customer said
+today: on the live corpus that dropped 17 of Sarah's 41 eligible facts, all of them her most
+recent. Neither reaches the middle, where a fact can be neither old enough nor new enough to
+qualify while still being the one the agent needs most.
+
+So: a recency quota (6), a salience quota (6) keyed on how often a fact has actually been recalled,
+and the remainder to the oldest. Salience is earned rather than assumed, and facts never recalled
+are excluded from that quota, because otherwise every count is zero, ties break on age, and the
+quota silently becomes a second foundations pass.
+
+Gathering the pool takes one multi-search carrying three orderings. A single sorted query cannot
+supply it: fetching the oldest N would never show the newest fact, and at a few hundred facts per
+user an over-fetch wide enough to cover every ordering stops being cheap.
+
+Two further decisions are load-bearing:
 
 - **Constraints before identity.** When the cap binds it should drop biography rather than a hard
   limit the agent has to respect.
-- **Oldest-first within a type.** Counter-intuitive, and important. Consolidation output is always
-  newer than the durable facts it was derived from, so newest-first lets recent churn ("tone
-  shifted from enthusiastic to tired") crowd out foundational facts ("owns a Lumio Hub v2"). For
-  an always-in-context block, age is a good proxy for durability: stable attributes are
-  established early and restated rarely.
-
-Near-duplicates are removed at selection time, after an over-fetch so duplicates cannot consume
-slots. Token-set Jaccard rather than an embedding call, because this runs every turn.
+- **Near-duplicates removed before the cap applies.** Deduplicating after truncation would let
+  duplicates consume slots and silently shrink the effective block. Token-set Jaccard rather than
+  an embedding call, because this runs on every turn.
 
 **Dependency worth knowing.** The tier is only as good as `fact_type` hygiene. `CORE_MEMORY_ENABLED`
 exists so an operator can disable it, reclassify, and re-enable. See the upgrade notes below.

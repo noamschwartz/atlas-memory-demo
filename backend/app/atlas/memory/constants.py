@@ -81,6 +81,29 @@ CONSOLIDATION_EXISTING_FACTS_LIMIT = 200
 # yet it must still shape the answer.
 CORE_MEMORY_LIMIT = 24
 
+# How the core-memory slots are divided.
+#
+# Sorting purely by age protects foundational facts but buries new ones: a fact
+# the customer stated today sorts last and is the first thing the cap cuts. On
+# the live corpus that was already happening, with 17 of Sarah's 41 eligible
+# facts dropped, all of them her most recent. Sorting purely by recency has the
+# mirror failure, which is what this originally did: consolidation output is
+# always newer than the facts it was derived from, so churn evicted "owns a
+# Lumio Hub v2" in favour of "tone shifted from enthusiastic to tired".
+#
+# Neither end alone is right, and neither covers the middle. So the block is
+# filled from three directions:
+#
+#   recent    the newest facts, so today's news is never invisible
+#   salient   the most-recalled facts, which is earned importance rather than
+#             a guess: a fact the agent has actually needed nine times has
+#             demonstrated its worth
+#   founding  the oldest, which is where stable attributes live
+#
+# Remaining slots after the first two go to founding facts.
+CORE_MEMORY_RECENT_SLOTS = 6
+CORE_MEMORY_SALIENT_SLOTS = 6
+
 # Master switch for the core-memory block. ON by default, but exposed because
 # the block is only as good as `fact_type` hygiene, and on a corpus built by the
 # older, looser consolidation prompt that hygiene can be poor: historical events

@@ -24,6 +24,15 @@ class _FakeES:
         self.searches.append(kwargs)
         return {"hits": {"hits": self._hits}}
 
+    def msearch(self, **kwargs):
+        # core_memory issues one multi-search carrying three orderings.
+        # Record each body so assertions can inspect them individually.
+        searches = kwargs.get("searches") or []
+        bodies = [b for i, b in enumerate(searches) if i % 2 == 1]
+        for body in bodies:
+            self.searches.append({"body": body, "index": kwargs.get("index")})
+        return {"responses": [{"hits": {"hits": self._hits}} for _ in bodies]}
+
     def index(self, **kwargs):
         self.indexed.append(kwargs)
         return {"result": "created"}
@@ -53,31 +62,24 @@ def test_core_memory_excludes_superseded_facts():
     assert {"exists": {"field": "superseded_by"}} in must_not
 
 
-def test_core_memory_orders_constraints_before_identity_then_oldest_first():
-    """Two load-bearing sort decisions.
-
-    'constraint' before 'identity': when the cap bites it should drop biography,
-    not a hard limit the agent must respect.
-
-    Oldest-first WITHIN a type: newest-first evicted the foundational facts,
-    because consolidation output is always newer than the durable facts it was
-    derived from. On the live corpus "Sarah owns a Lumio Hub v2" was pushed out
-    of the block by "Sarah's tone shifted from enthusiastic to tired".
-    """
+def test_core_memory_gathers_three_orderings_in_one_round_trip():
+    """No single ordering can supply the pool. Oldest-first never shows today's
+    fact; newest-first lets consolidation churn evict foundations; neither
+    reaches a fact that is merely well-used. One msearch, three sorts."""
     es = _FakeES()
     core_memory(es, user_id="sarah")
-    assert es.searches[0]["body"]["sort"] == [
-        {"fact_type": "asc"},
-        {"created_at": "asc"},
-    ]
+    sorts = [s["body"]["sort"] for s in es.searches]
+    assert [{"created_at": "asc"}] in sorts, "foundations"
+    assert [{"created_at": "desc"}] in sorts, "recency"
+    assert [{"use_count": "desc"}, {"created_at": "asc"}] in sorts, "earned salience"
 
 
 def test_core_memory_overfetches_then_caps():
-    """Dedup must happen before truncation, or duplicates consume slots and
-    silently shrink the effective block."""
+    """Dedup and quota selection both happen before truncation, so each slice
+    must return more than the final cap."""
     es = _FakeES()
     core_memory(es, user_id="sarah")
-    assert es.searches[0]["body"]["size"] > CORE_MEMORY_LIMIT
+    assert all(s["body"]["size"] > CORE_MEMORY_LIMIT for s in es.searches)
 
 
 def test_core_memory_caps_returned_facts():

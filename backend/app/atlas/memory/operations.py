@@ -21,6 +21,8 @@ from .constants import (
     CORE_MEMORY_DEDUP_THRESHOLD,
     CORE_MEMORY_ENABLED,
     CORE_MEMORY_LIMIT,
+    CORE_MEMORY_RECENT_SLOTS,
+    CORE_MEMORY_SALIENT_SLOTS,
     DECAY_EPISODIC_OFFSET,
     DECAY_EPISODIC_SCALE,
     DECAY_GAUSS,
@@ -758,6 +760,59 @@ def _dedupe_core_facts(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return kept
 
 
+def _select_core_facts(
+    pool: list[dict[str, Any]],
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Choose which facts occupy the always-in-context block.
+
+    Filled from three directions rather than one, because any single ordering
+    has a blind spot. Newest-first lets recent churn evict foundational facts.
+    Oldest-first buries what the customer said today. Neither reaches the
+    middle, where a fact can be neither old enough nor new enough to qualify
+    while still being the one the agent needs most.
+
+    So: a recency quota, a salience quota keyed on how often a fact has actually
+    been recalled, and the remainder to the oldest. Salience is the interesting
+    one because it is earned rather than assumed. A fact with use_count nine has
+    proven itself; a fact with use_count zero has not, and is skipped for that
+    quota so the slots go to facts with real evidence behind them.
+    """
+    if len(pool) <= limit:
+        return pool
+
+    def created(f: dict[str, Any]) -> str:
+        return f.get("created_at") or ""
+
+    picked: dict[str, dict[str, Any]] = {}
+
+    def take(ordered: list[dict[str, Any]], n: int) -> None:
+        for fact in ordered:
+            if len(picked) >= limit or n <= 0:
+                return
+            if fact["id"] in picked:
+                continue
+            picked[fact["id"]] = fact
+            n -= 1
+
+    # Newest first, so today's news is never invisible.
+    take(sorted(pool, key=created, reverse=True), CORE_MEMORY_RECENT_SLOTS)
+
+    # Then earned importance. Facts never recalled are excluded here: without
+    # that guard every use_count is zero, ties break on age, and this quota
+    # silently becomes a second foundations pass.
+    used = [f for f in pool if (f.get("use_count") or 0) > 0]
+    take(sorted(used, key=lambda f: (-(f.get("use_count") or 0), created(f))),
+         CORE_MEMORY_SALIENT_SLOTS)
+
+    # Whatever is left goes to the oldest, where stable attributes live.
+    take(sorted(pool, key=created), limit)
+
+    # Constraints first, then oldest first, so the rendered block reads
+    # consistently regardless of which quota admitted each fact.
+    return sorted(picked.values(), key=lambda f: (f.get("fact_type") or "", created(f)))
+
+
 def core_memory(
     es: Elasticsearch,
     *,
@@ -777,61 +832,60 @@ def core_memory(
 
     This is the tier Letta calls core memory, and that file-backed agent setups
     get from a static profile document. `fact_type` already carried the labels
-    needed to build it here —
-    they were written on every semantic fact, indexed as a keyword, and never
-    used in a single query.
+    needed to build it here, written on every semantic fact, indexed as a
+    keyword, and used in no query at all.
 
-    Constraints are returned ahead of identity facts, and only then by recency,
-    because when the cap bites it should bite on biography rather than on a
-    hard limit the agent must respect.
+    Constraints are returned ahead of identity facts, because when the cap binds
+    it should bite on biography rather than on a hard limit the agent must
+    respect.
     """
     if not CORE_MEMORY_ENABLED:
         return []
 
-    # Over-fetch, then dedup, then cap. Deduplicating after truncation would
-    # let duplicates consume slots and silently shrink the effective block.
-    response = es.search(
-        index=INDEX_SEMANTIC,
-        body={
-            "size": limit * 3,
-            "query": {
-                "bool": {
-                    "filter": [
-                        {"term": {"user_id": user_id}},
-                        {"terms": {"fact_type": ["constraint", "identity"]}},
-                    ],
-                    "must_not": [{"exists": {"field": "superseded_by"}}],
-                }
-            },
-            "sort": [
-                # keyword sort: "constraint" < "identity" alphabetically, so
-                # ascending order puts constraints first. Documented here
-                # because it is load-bearing rather than incidental.
-                {"fact_type": "asc"},
-                # Oldest-first WITHIN a type. Counter-intuitive, and load-bearing.
-                # Newest-first evicted the foundational facts: on the live corpus
-                # "Sarah owns a Lumio Hub v2" was pushed out of the block by
-                # "Sarah's tone shifted from enthusiastic to tired", because
-                # consolidation output is always newer than the durable facts it
-                # was derived from. Stable attributes are established early and
-                # restated rarely; churn is recent. For an always-in-context
-                # block, age is a signal of durability.
-                {"created_at": "asc"},
-            ],
-            "_source": ["text", "fact_type"],
-        },
-    )
-
-    candidates = [
-        {
-            "id": h["_id"],
-            "text": (h["_source"].get("text") or "").strip(),
-            "fact_type": h["_source"].get("fact_type"),
-        }
-        for h in response["hits"]["hits"]
-        if (h["_source"].get("text") or "").strip()
+    base_filter = [
+        {"term": {"user_id": user_id}},
+        {"terms": {"fact_type": ["constraint", "identity"]}},
     ]
-    return _dedupe_core_facts(candidates)[:limit]
+    query = {
+        "bool": {
+            "filter": base_filter,
+            "must_not": [{"exists": {"field": "superseded_by"}}],
+        }
+    }
+    # One round trip, three orderings. A single sorted query cannot supply the
+    # pool: fetching the oldest N would never show the newest fact, and at a few
+    # hundred facts per user an over-fetch large enough to cover every ordering
+    # stops being cheap.
+    per_slice = limit * 2
+    body = {"size": per_slice, "query": query, "_source": ["text", "fact_type", "created_at", "use_count"]}
+    header: dict[str, Any] = {"index": INDEX_SEMANTIC}
+    searches = [
+        header, {**body, "sort": [{"created_at": "asc"}]},
+        header, {**body, "sort": [{"created_at": "desc"}]},
+        header, {**body, "sort": [{"use_count": "desc"}, {"created_at": "asc"}]},
+    ]
+    responses = es.msearch(searches=searches, index=INDEX_SEMANTIC)["responses"]
+
+    pool: dict[str, dict[str, Any]] = {}
+    for resp in responses:
+        for hit in (resp.get("hits", {}) or {}).get("hits", []) or []:
+            src = hit.get("_source") or {}
+            text = (src.get("text") or "").strip()
+            if not text:
+                continue
+            pool[hit["_id"]] = {
+                "id": hit["_id"],
+                "text": text,
+                "fact_type": src.get("fact_type"),
+                "created_at": src.get("created_at"),
+                "use_count": src.get("use_count") or 0,
+            }
+
+    selected = _select_core_facts(_dedupe_core_facts(list(pool.values())), limit)
+    return [
+        {"id": f["id"], "text": f["text"], "fact_type": f["fact_type"]}
+        for f in selected
+    ]
 
 
 def forget_memory(
