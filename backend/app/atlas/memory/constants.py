@@ -104,6 +104,24 @@ CORE_MEMORY_LIMIT = 24
 CORE_MEMORY_RECENT_SLOTS = 6
 CORE_MEMORY_SALIENT_SLOTS = 6
 
+# The only values `fact_type` may take.
+#
+# The agent's `write_memory` tool declares these as a JSON-schema enum, so that
+# path is constrained before a call is ever made. Consolidation is not: it hands
+# `write_memory` the extractor's raw JSON, so a misspelled or invented type is
+# stored verbatim.
+#
+# That failure is quiet rather than loud, which is what makes it worth closing.
+# An unrecognised value matches no core-memory filter, so a fact the model meant
+# as a constraint simply never reaches the always-in-context block, and nothing
+# says so. It also silently breaks every aggregation over the field.
+VALID_FACT_TYPES = frozenset({"preference", "identity", "constraint", "world"})
+
+# Where an unrecognised value lands. Deliberately the one type that is NOT
+# injected into every future turn: a value we failed to recognise must never be
+# promoted into the always-in-context block on a guess.
+DEFAULT_FACT_TYPE = "preference"
+
 # Master switch for the core-memory block. ON by default, but exposed because
 # the block is only as good as `fact_type` hygiene, and on a corpus built by the
 # older, looser consolidation prompt that hygiene can be poor: historical events

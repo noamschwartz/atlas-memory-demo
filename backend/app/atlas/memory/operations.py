@@ -23,6 +23,7 @@ from .constants import (
     CORE_MEMORY_LIMIT,
     CORE_MEMORY_RECENT_SLOTS,
     CORE_MEMORY_SALIENT_SLOTS,
+    DEFAULT_FACT_TYPE,
     DECAY_EPISODIC_OFFSET,
     DECAY_EPISODIC_SCALE,
     DECAY_GAUSS,
@@ -37,6 +38,7 @@ from .constants import (
     RERANKER_INFERENCE_ID,
     SUPERSEDE_CONFIDENCE_PENALTY,
     USE_COUNT_BOOST_WEIGHT,
+    VALID_FACT_TYPES,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,36 @@ def _index_for(memory_type: str) -> str:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _clean_fact_type(value: Any) -> str:
+    """Coerce `fact_type` to one of the four values the system understands.
+
+    Case and surrounding whitespace are normalised, which is correction rather
+    than inference. Anything else falls back to the default and is logged: a
+    misspelling like "constraints" is deliberately NOT repaired to "constraint",
+    because guessing intent here would inject an unverified fact into every
+    future turn, which is the one outcome this field's mistakes are expensive
+    for.
+
+    Never raises. Following `_clean_date`, a bad value should cost one field,
+    not the whole consolidation pass it arrived in.
+    """
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        if cleaned in VALID_FACT_TYPES:
+            return cleaned
+        if cleaned:
+            logger.warning(
+                "write_memory: unrecognised fact_type %r, storing as %r",
+                value, DEFAULT_FACT_TYPE,
+            )
+    elif value is not None:
+        logger.warning(
+            "write_memory: non-string fact_type %r, storing as %r",
+            value, DEFAULT_FACT_TYPE,
+        )
+    return DEFAULT_FACT_TYPE
 
 
 def write_memory(
@@ -118,7 +150,7 @@ def write_memory(
             base_confidence = max(0.0, base_confidence - SUPERSEDE_CONFIDENCE_PENALTY)
         doc.update(
             text=text,
-            fact_type=fact_type or "preference",
+            fact_type=_clean_fact_type(fact_type),
             confidence=base_confidence,
             source_episodes=source_episodes or [],
             created_at=now,

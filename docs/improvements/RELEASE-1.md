@@ -334,6 +334,37 @@ a reply less than half as long.
 **Breaking?** No. Adding *optional* JSON Schema properties is backward-compatible; `required` is
 unchanged, so existing MCP clients keep working (they need a restart to see the new fields).
 
+## A7. `fact_type` validation
+
+`write_memory` accepted `fact_type` as a free string and stored whatever it was handed. The agent's
+tool schema declares the four values as a JSON-schema enum, so that path was already constrained
+before a call could be made. Consolidation was not: it passes the extractor's raw JSON straight
+through.
+
+The failure mode is quiet, which is what makes it worth closing. An unrecognised value matches no
+core-memory filter, so a fact the model meant as a `constraint` never reaches the always-in-context
+block and nothing reports it. It also silently breaks any aggregation over the field.
+
+Values are now normalised for case and surrounding whitespace, which is correction rather than
+inference, and anything else falls back to `preference` with a warning. A misspelling like
+`"constraints"` is deliberately **not** repaired to `"constraint"`: guessing intent would promote an
+unverified fact into the block injected on every future turn, and the fallback is deliberately the
+one type that is never injected there. Following `_clean_date`, a bad value costs one field rather
+than the consolidation pass it arrived in.
+
+**Not addressed, and not addressable this way.** A well-formed but wrong type — a transient status
+typed `identity` — passes validation cleanly. That is a judgment error, not a format error. It is
+what the prompt's typing guidance and `CORE_MEMORY_ENABLED` exist for.
+
+**Scope.** Preventive. The live corpus carries only the four valid values (preference 72, identity
+70, world 36, constraint 33), so nothing needed repairing.
+
+**Breaking?** No. Valid values pass through unchanged; episodic and procedural writes are untouched.
+
+**Verified.** Nine unit tests, including that a near-miss is not coerced to its nearest neighbour
+and that the fallback is never a core-memory type. Live: a fact written as `"constraints"` stored as
+`preference` and stayed out of the profile block, while `"  Identity  "` normalised and appeared.
+
 ## Smaller changes
 
 - **Confidence reaches the agent.** Semantic facts carried a `confidence` float that never reached
